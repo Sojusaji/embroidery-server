@@ -1,21 +1,7 @@
-import multer, { diskStorage } from 'multer';
-import { join, extname as _extname } from 'path';
-import { existsSync, mkdirSync } from 'fs';
+import multer from 'multer';
+import { extname as _extname } from 'path';
 
-// Ensure upload directory exists
-const uploadDir = join(__dirname, '../../uploads');
-if (!existsSync(uploadDir)) {
-  mkdirSync(uploadDir, { recursive: true });
-}
-
-const storage = diskStorage({
-  destination(req, file, cb) {
-    cb(null, uploadDir); 
-  },
-  filename(req, file, cb) {
-    cb(null, `${file.fieldname}-${Date.now()}${_extname(file.originalname)}`);
-  }
-});
+const storage = multer.memoryStorage();
 
 function checkFileType(file, cb) {
   const filetypes = /jpg|jpeg|png|webp/;
@@ -25,15 +11,15 @@ function checkFileType(file, cb) {
   if (extname && mimetype) {
     return cb(null, true);
   } else {
-    cb('Images only!');
+    cb(new Error('Images only!'), false);
   }
 }
 
-const upload = multer({
+export const upload = multer({
   storage,
-  fileFilter: function(req, file, cb) {
+  fileFilter: function (req, file, cb) {
     checkFileType(file, cb);
   }
 });
 
-export default upload;
+

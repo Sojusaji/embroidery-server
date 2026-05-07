@@ -1,4 +1,6 @@
 import productModel from '../models/Product.js';
+import githubServices from "../scripts/githubServices.js";
+import AppError from '../utils/appError.js';
 
 // @desc    Fetch all products
 // @route   GET /api/products
@@ -38,4 +40,39 @@ const createProduct = async (req, res) => {
   }
 };
 
-export default { getProducts, createProduct };
+
+const uploadProductImage = async (req, res, next) => {
+  try {
+
+    if (!req.file || !req.file.buffer) {
+      return next(new AppError('No image file provided', 400));
+    }
+    console.log('req.body:', req.body);
+    const { category } = req.body;
+    console.log('category:', category);
+    if (!category) {
+      return next(new AppError('Folder name is required', 400));
+    }
+
+    const result = await githubServices.uploadImage(
+      req.file.buffer,
+      category
+    );
+
+    res.status(201).json({
+      success: true,
+      message: 'Image uploaded to GitHub successfully',
+      data: {
+        fileName: result.fileName,
+        githubUrl: result.data.download_url
+      }
+    });
+
+  } catch (error) {
+    next(error);
+  }
+}
+
+
+
+export default { getProducts, createProduct, uploadProductImage };

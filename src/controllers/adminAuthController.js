@@ -148,3 +148,13 @@ export const verifyToken = async (req, res, next) => {
     next(error);
   }
 };
+
+
+
+export const getDashboardSummary=()=>{
+  try {
+    
+  } catch (error) {
+    
+  }
+}
