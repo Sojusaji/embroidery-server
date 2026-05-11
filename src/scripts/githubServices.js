@@ -15,6 +15,7 @@ class GithubServices {
 
     this.owner = process.env.GITHUB_OWNER;
     this.repo = process.env.GITHUB_REPO;
+    this.allowedFolders = ['embroidery', 'stitching', 'rolled-gold-ornaments'];
 
     this.octokit = new MyOctokit({
       auth: process.env.GITHUB_TOKEN,
@@ -53,9 +54,8 @@ class GithubServices {
     console.log('processedImage:', processedImage);
 
     // 2. Generate Path (Simplified Logic)
-    const allowedFolders = ['embroidery', 'stitching', 'rolled-gold-ornaments'];
 
-    if (!allowedFolders.includes(folder)) {
+    if (!this.allowedFolders.includes(folder)) {
       throw new AppError("Invalid folder destination.", 400);
     }
 
@@ -65,7 +65,7 @@ class GithubServices {
     try {
       // 3. Encode to Base64
       const contentEncoded = Buffer.from(processedImage).toString("base64");
-      console.log('contentencoded',contentEncoded);
+      console.log('contentencoded', contentEncoded);
       // 4. Upload to GitHub
       const response = await this.octokit.rest.repos.createOrUpdateFileContents({
         owner: this.owner,
@@ -78,11 +78,61 @@ class GithubServices {
       console.log('response after gitHub upload :', response);
       return {
         success: true,
-        data: response.data.content,
+        imageUrl: response.data.content.download_url,
+        sha: response.data.content.sha,
+        filePath,
         fileName
       };
     } catch (error) {
       throw new AppError(`GitHub Upload Error: ${error.message}`, error.status || 500);
+    }
+  }
+
+  async deleteImage(filePath, sha) {
+    if(!filePath||!sha){
+      throw new AppError('Data Is Missing',400);
+    }
+    try {
+      const response = await this.octokit.rest.repos.deleteFile({
+        owner: this.owner,
+        repo: this.repo,
+        path: filePath,
+        message: 'chore: delete image',
+        sha: sha
+      })
+      console.log('response after deleting image:', response);
+      return {
+        success: true,
+        message: 'Image deleted successfully'
+      }
+    } catch (error) {
+      throw new AppError(`GitHub Fetch Error:${error.message}`, error.status || 500);
+    }
+  }
+
+  async updateImage(image, sha, filePath) {
+    if (!image||!sha||!folder||!filePath) {
+      throw new AppError('Data Is Missing', 400);
+    }
+    const { data: processedImage } = await convertImage(image);
+    const contentEncoded = Buffer.from(processedImage).toString("base64");
+    try {
+      const response = await this.octokit.rest.repos.createOrUpdateFileContents({
+        owner: this.owner,
+        repo: this.repo,
+        message: `feat: image update`,
+        content: contentEncoded,
+        path: filePath,
+        sha: sha
+      })
+      return {
+        success: true,
+        imageUrl: response.data.content.download_url,
+        sha:response.data.content.sha,
+        filePath,
+      }
+    } catch (error) {
+      throw new AppError(`GitHub Fetch Error:${error.message}`, error.status || 500);
     }
   }
 }

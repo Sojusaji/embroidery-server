@@ -58,13 +58,14 @@ const uploadProductImage = async (req, res, next) => {
       req.file.buffer,
       category
     );
-
     res.status(201).json({
       success: true,
       message: 'Image uploaded to GitHub successfully',
       data: {
         fileName: result.fileName,
-        githubUrl: result.data.download_url
+        filePath:result.filePath,
+        githubUrl: result.imageUrl,
+        sha:result.sha
       }
     });
 
@@ -74,5 +75,61 @@ const uploadProductImage = async (req, res, next) => {
 }
 
 
+const updateProductImage = async (req, res, next) => {
+  try {
 
-export default { getProducts, createProduct, uploadProductImage };
+    if (!req.file || !req.file.buffer) {
+      return next(new AppError('No image file provided', 400));
+    }
+    console.log('req.body:', req.body);
+    const { filePath, sha } = req.body;
+    if (!filePath || !sha) {
+      return next(new AppError('Image datas are missing', 400));
+    }
+
+    const result = await githubServices.updateImage(
+      req.file.buffer,
+      sha,
+      filePath
+    );
+    res.status(201).json({
+      success: true,
+      message: 'Image updated successfully',
+      data: {
+        filePath: result.filePath,
+        sha:result.sha,
+        githubUrl: result.imageUrl
+      }
+    });
+
+  } catch (error) {
+    next(error);
+  }
+}
+
+
+const deleteProductImage = async (req, res, next) => {
+  try {
+
+    console.log('req.body:', req.body);
+    const { filePath, sha } = req.body;
+    if (!filePath || !sha) {
+      return next(new AppError('Image datas are missing', 400));
+    }
+
+    const result = await githubServices.deleteImage(
+      sha,
+      filePath
+    );
+  
+    res.status(200).json({
+      success: result.success,
+      message: result.message,
+    });
+
+  } catch (error) {
+    next(error);
+  }
+}
+
+export default { getProducts, createProduct, uploadProductImage,updateProductImage,deleteProductImage };
