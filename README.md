@@ -3,6 +3,12 @@
 This is the secure full-stack backend production server that powers the Embroidery & Jewellery E-Commerce platform. It manages secure data authentication, role-based access control, automated email verification, media storage integrations, and optimized payment processing.
 
 ---
+## 🔗 Project Repositories
+
+| Repository | Link |
+| :--- | :--- |
+| **🖥️ Frontend Client** | [View Repository](https://github.com/Sojusaji/embroidery-frontend) |
+| **⚙️ Backend Server** | [View Repository](https://github.com/Sojusaji/Embroidery-server) |
 
 ## 🚀 Core Features & Architecture
 
