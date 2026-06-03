@@ -17,16 +17,37 @@ const productSchema = new Schema({
     type: String,
     required: true, // Path to image
   },
-  category: {
+  imageInfo:{
+    filePath:{
+      type:String,
+      required:true,
+    },
+    sha:{
+      type:String,
+      required:true,
+    }
+  },
+category: {
     type: String,
-    required: true, // 'Embroidery Art', 'Stitched Clothes', etc.
+    required: true,
+  },
+  totalStock: {
+    type: Number,
+    required: true,
+    min: [0, 'Stock cannot be negative'],
+    default: 0
+  },
+  totalOrder: {
+    type: Number,
+    default: 0,
+    min: 0
   },
   inStock: {
     type: Boolean,
     default: true,
-  }
+  },
 }, { timestamps: true });
 
 
-const productModel=model('Product', productSchema);
+const productModel=model('Products', productSchema);
 export default productModel;
