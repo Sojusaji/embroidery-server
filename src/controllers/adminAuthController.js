@@ -7,8 +7,6 @@ import AppError from '../utils/appError.js';
 
 export const loginAdmin = async (req, res, next) => {
   const { password, email } = req.body;
-  console.log('admin login credentials:',req.body);
-
   try {
     await loginSchema.validateAsync(req.body);
 
@@ -149,7 +147,28 @@ export const verifyToken = async (req, res, next) => {
   }
 };
 
-
+export const logoutAdmin = async (req, res, next) => {
+  try {
+    res.clearCookie('AccessToken', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === "production" ? 'None' : 'Lax',
+      path: '/'
+    });
+    res.clearCookie('RefreshToken', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? 'None' : 'Lax',
+      path: '/user/refresh',
+    });
+    res.status(200).json({
+      status: 'success',
+      message: 'Logged out successfully'
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 
 export const getDashboardSummary=()=>{
   try {
