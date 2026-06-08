@@ -5,24 +5,24 @@ import AppError from '../utils/appError.js';
 // @desc    Fetch all products
 // @route   GET /api/products
 // @access  Public
-const getProducts = async (req, res) => {
+const getProducts = async (req, res, next) => {
   try {
-    const products = await productModel.find({});
-    res.json(products);
+    const products = await productModel.find().sort({ createdAt: -1 });
+    res.status(200).json(products);
   } catch (error) {
-    res.status(500).json({ message: 'Failed to fetch products', error: error.message });
+    next(error);
   }
 };
 
 // @desc    Create a product (Admin)
 // @route   POST /api/products
 // @access  Private/Admin
-const createProduct = async (req, res) => {
+const createProduct = async (req, res,next) => {
   try {
-    const { name, description, price, image, category } = req.body;
+    const { name, description, price, image, category, imagefilePath, sha, totalStock } = req.body;
 
-    if (!name || !price || !image || !category) {
-      return res.status(400).json({ message: 'Please provide all required fields' });
+    if (!name || !price || !image || !sha || !imagefilePath || !category || !totalStock) {
+      return next(new AppError('Please provide all required fields',400));
     }
 
     const product = new productModel({
@@ -30,13 +30,18 @@ const createProduct = async (req, res) => {
       description: description || 'Premium Quality',
       price,
       image,
-      category
+      imageInfo: {
+        filePath: imagefilePath,
+        sha
+      },
+      category,
+      totalStock,
     });
 
     const createdProduct = await product.save();
     res.status(201).json(createdProduct);
   } catch (error) {
-    res.status(500).json({ message: 'Failed to create product', error: error.message });
+    next(error)
   }
 };
 
@@ -47,9 +52,7 @@ const uploadProductImage = async (req, res, next) => {
     if (!req.file || !req.file.buffer) {
       return next(new AppError('No image file provided', 400));
     }
-    console.log('req.body:', req.body);
     const { category } = req.body;
-    console.log('category:', category);
     if (!category) {
       return next(new AppError('Folder name is required', 400));
     }
@@ -62,10 +65,9 @@ const uploadProductImage = async (req, res, next) => {
       success: true,
       message: 'Image uploaded to GitHub successfully',
       data: {
-        fileName: result.fileName,
-        filePath:result.filePath,
-        githubUrl: result.imageUrl,
-        sha:result.sha
+        filePath: result.filePath,
+        imageUrl: result.imageUrl,
+        sha: result.sha
       }
     });
 
@@ -97,8 +99,8 @@ const updateProductImage = async (req, res, next) => {
       message: 'Image updated successfully',
       data: {
         filePath: result.filePath,
-        sha:result.sha,
-        githubUrl: result.imageUrl
+        sha: result.sha,
+        imageUrl: result.imageUrl
       }
     });
 
@@ -121,7 +123,7 @@ const deleteProductImage = async (req, res, next) => {
       sha,
       filePath
     );
-  
+
     res.status(200).json({
       success: result.success,
       message: result.message,
@@ -132,4 +134,4 @@ const deleteProductImage = async (req, res, next) => {
   }
 }
 
-export default { getProducts, createProduct, uploadProductImage,updateProductImage,deleteProductImage };
+export default { getProducts, createProduct, uploadProductImage, updateProductImage, deleteProductImage };
