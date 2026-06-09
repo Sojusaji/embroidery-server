@@ -1,28 +1,34 @@
 import productModel from '../models/Product.js';
 import githubServices from "../scripts/githubServices.js";
 import AppError from '../utils/appError.js';
+import { hardDeleteProducts } from '../scripts/productCleanupService.js';
+
+
 
 // @desc    Fetch all products
 // @route   GET /api/products
 // @access  Public
 const getProducts = async (req, res, next) => {
   try {
-    const products = await productModel.find().sort({ createdAt: -1 });
+    const products = await productModel.find({ isDeleted: false }).sort({ createdAt: -1 });
     res.status(200).json(products);
   } catch (error) {
     next(error);
   }
 };
 
+
+
+
 // @desc    Create a product (Admin)
 // @route   POST /api/products
 // @access  Private/Admin
-const createProduct = async (req, res,next) => {
+const createProduct = async (req, res, next) => {
   try {
     const { name, description, price, image, category, imagefilePath, sha, totalStock } = req.body;
 
     if (!name || !price || !image || !sha || !imagefilePath || !category || !totalStock) {
-      return next(new AppError('Please provide all required fields',400));
+      return next(new AppError('Please provide all required fields', 400));
     }
 
     const product = new productModel({
@@ -44,6 +50,8 @@ const createProduct = async (req, res,next) => {
     next(error)
   }
 };
+
+
 
 
 const uploadProductImage = async (req, res, next) => {
@@ -75,6 +83,8 @@ const uploadProductImage = async (req, res, next) => {
     next(error);
   }
 }
+
+
 
 
 const updateProductImage = async (req, res, next) => {
@@ -110,28 +120,127 @@ const updateProductImage = async (req, res, next) => {
 }
 
 
-const deleteProductImage = async (req, res, next) => {
-  try {
 
-    console.log('req.body:', req.body);
-    const { filePath, sha } = req.body;
-    if (!filePath || !sha) {
-      return next(new AppError('Image datas are missing', 400));
+
+// const deleteProductImage = async (req, res, next) => {
+//   try {
+
+//     console.log('req.body:', req.body);
+//     const { filePath, sha } = req.body;
+//     if (!filePath || !sha) {
+//       return next(new AppError('Image datas are missing', 400));
+//     }
+
+//     const result = await githubServices.deleteImage(
+//       sha,
+//       filePath
+//     );
+
+//     res.status(200).json({
+//       success: result.success,
+//       message: result.message,
+//     });
+
+//   } catch (error) {
+//     next(error);
+//   }
+// }
+
+
+
+
+const deleteProduct = async (req, res, next) => {
+  const { productId } = req.query;
+  console.log('productID:', productId);
+
+  if (!productId) {
+    return next(new AppError('Product ID is missing', 400));
+  }
+
+  try {
+    const product = await productModel.findOne({ _id: productId, isDeleted: false });
+
+    if (!product) {
+      return next(new AppError('Failed to delete product. Active product not found.', 404));
     }
 
-    const result = await githubServices.deleteImage(
-      sha,
-      filePath
-    );
+    product.isDeleted = true;
+    product.deletedAt = new Date();
+    await product.save();
 
-    res.status(200).json({
-      success: result.success,
-      message: result.message,
+
+    return res.status(200).json({
+      success: true,
+      message: 'Product moved to trash successfully'
     });
 
   } catch (error) {
     next(error);
   }
-}
+};
 
-export default { getProducts, createProduct, uploadProductImage, updateProductImage, deleteProductImage };
+
+
+//GET ALL SOFT-DELETED PRODUCTS FOR THE TRASH VIEW
+export const getTrashedProducts = async (req, res, next) => {
+  try {
+    const trashedItems = await productModel.find({ isDeleted: true }).sort({ deletedAt: -1 });
+    return res.status(200).json({ success: true, data: trashedItems });
+  } catch (error) { next(error); }
+};
+
+// C. RESTORE A SOFT-DELETED PRODUCT BACK TO CATALOG LIFE
+export const restoreProduct = async (req, res, next) => {
+  const { productId } = req.body;
+  if (!productId) return next(new AppError('Product ID is required', 400));
+
+  try {
+    const product = await productModel.findOne({ _id: productId, isDeleted: true });
+    if (!product) return next(new AppError('Product not found in trash', 404));
+
+    product.isDeleted = false;
+    product.deletedAt = null;
+    await product.save();
+
+    return res.status(200).json({ success: true, message: 'Product restored successfully.' });
+  } catch (error) { next(error); }
+};
+
+
+
+
+
+// PERMANENT MANUAL PURGE
+export const purgeTrash = async (req, res, next) => {
+  const { productId } = req.body;
+
+  try {
+    let productsToPurge = [];
+
+    if (productId) {
+
+      const product = await productModel.findOne({ _id: productId, isDeleted: true });
+      if (!product) return next(new AppError('Product not found in trash', 404));
+      productsToPurge = [product];
+
+    } else {
+      productsToPurge = await productModel.find({ isDeleted: true });
+    }
+
+    if (productsToPurge.length === 0) {
+      return res.status(200).json({ success: true, message: 'Trash bin is already empty.' });
+    }
+
+    const totalPurged = await hardDeleteProducts(productsToPurge);
+
+    return res.status(200).json({
+      success: true,
+      message: `Successfully purged ${totalPurged} item(s) permanently.`
+    });
+
+  } catch (error) {
+    next(error);
+  }
+};
+
+export default { getProducts, getTrashedProducts, restoreProduct, purgeTrash, createProduct, uploadProductImage, updateProductImage, deleteProduct };

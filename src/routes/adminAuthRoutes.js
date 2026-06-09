@@ -1,9 +1,10 @@
 import { Router } from 'express';
 const router = Router();
-import { loginAdmin, verifyToken, getAdmins, addAdmin, deleteAdmin ,getDashboardSummary} from '../controllers/adminAuthController.js';
+import { loginAdmin, logoutAdmin, verifyToken, getAdmins, addAdmin, deleteAdmin ,getDashboardSummary} from '../controllers/adminAuthController.js';
 import authMiddleware, { restrictTo } from '../middlewares/authMiddleware.js';
 
 router.post('/login', loginAdmin);
+router.post('/logout', logoutAdmin);
 router.get('/verify', authMiddleware, verifyToken);
 
 // Admin management routes (Super Admin only)

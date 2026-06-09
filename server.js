@@ -11,6 +11,7 @@ import productRoutes from './src/routes/productRoutes.js';
 import orderRoutes from './src/routes/orderRoutes.js';
 import globalErrorHandler from './src/middlewares/errorMiddleware.js';
 import { createSuperAdmin } from './src/scripts/seedAdmin.js';
+import { initCleanupCron } from './src/tasks/cleanupCron.js';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -34,7 +35,14 @@ app.use('/api/orders', orderRoutes);
 app.get('/api/health', (req, res) => {
   res.json({ status: 'success', message: 'API is healthy' });
 });
+
+
 app.use(globalErrorHandler);
+
+
+//Initialize trash cleanup cron
+initCleanupCron();
+
 
 // Start function
 const startServer = async () => {

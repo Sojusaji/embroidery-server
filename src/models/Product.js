@@ -17,17 +17,17 @@ const productSchema = new Schema({
     type: String,
     required: true, // Path to image
   },
-  imageInfo:{
-    filePath:{
-      type:String,
-      required:true,
+  imageInfo: {
+    filePath: {
+      type: String,
+      required: true,
     },
-    sha:{
-      type:String,
-      required:true,
+    sha: {
+      type: String,
+      required: true,
     }
   },
-category: {
+  category: {
     type: String,
     required: true,
   },
@@ -46,8 +46,16 @@ category: {
     type: Boolean,
     default: true,
   },
+  isDeleted: {
+    type: Boolean,
+    default: false
+  },
+  deletedAt: {
+    type: Date,
+    default: null
+  }
 }, { timestamps: true });
 
 
-const productModel=model('Products', productSchema);
+const productModel = model('Products', productSchema);
 export default productModel;

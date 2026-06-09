@@ -19,6 +19,9 @@ class GithubServices {
 
     this.octokit = new MyOctokit({
       auth: process.env.GITHUB_TOKEN,
+      request: {
+        timeout: 30000,
+      },
       throttle: {
         onRateLimit: (retryAfter, options) => {
           console.warn(`Quota exhausted: ${options.method} ${options.url}. Retrying in ${retryAfter}s`);
@@ -81,16 +84,15 @@ class GithubServices {
         imageUrl: response.data.content.download_url,
         sha: response.data.content.sha,
         filePath,
-        fileName
       };
     } catch (error) {
       throw new AppError(`GitHub Upload Error: ${error.message}`, error.status || 500);
     }
   }
 
-  async deleteImage(filePath, sha) {
-    if(!filePath||!sha){
-      throw new AppError('Data Is Missing',400);
+  async deleteImage(sha, filePath) {
+    if (!filePath || !sha) {
+      throw new AppError('Data Is Missing', 400);
     }
     try {
       const response = await this.octokit.rest.repos.deleteFile({
@@ -111,7 +113,7 @@ class GithubServices {
   }
 
   async updateImage(image, sha, filePath) {
-    if (!image||!sha||!folder||!filePath) {
+    if (!image || !sha || !filePath) {
       throw new AppError('Data Is Missing', 400);
     }
     const { data: processedImage } = await convertImage(image);
@@ -128,7 +130,7 @@ class GithubServices {
       return {
         success: true,
         imageUrl: response.data.content.download_url,
-        sha:response.data.content.sha,
+        sha: response.data.content.sha,
         filePath,
       }
     } catch (error) {
