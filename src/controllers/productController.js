@@ -120,35 +120,6 @@ const updateProductImage = async (req, res, next) => {
 }
 
 
-
-
-// const deleteProductImage = async (req, res, next) => {
-//   try {
-
-//     console.log('req.body:', req.body);
-//     const { filePath, sha } = req.body;
-//     if (!filePath || !sha) {
-//       return next(new AppError('Image datas are missing', 400));
-//     }
-
-//     const result = await githubServices.deleteImage(
-//       sha,
-//       filePath
-//     );
-
-//     res.status(200).json({
-//       success: result.success,
-//       message: result.message,
-//     });
-
-//   } catch (error) {
-//     next(error);
-//   }
-// }
-
-
-
-
 const deleteProduct = async (req, res, next) => {
   const { productId } = req.query;
   console.log('productID:', productId);
@@ -180,7 +151,6 @@ const deleteProduct = async (req, res, next) => {
 };
 
 
-
 //GET ALL SOFT-DELETED PRODUCTS FOR THE TRASH VIEW
 export const getTrashedProducts = async (req, res, next) => {
   try {
@@ -188,6 +158,7 @@ export const getTrashedProducts = async (req, res, next) => {
     return res.status(200).json({ success: true, data: trashedItems });
   } catch (error) { next(error); }
 };
+
 
 // C. RESTORE A SOFT-DELETED PRODUCT BACK TO CATALOG LIFE
 export const restoreProduct = async (req, res, next) => {

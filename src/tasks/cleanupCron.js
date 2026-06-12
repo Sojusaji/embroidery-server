@@ -3,6 +3,7 @@ import productModel from '../models/Product.js';
 import { hardDeleteProducts } from '../scripts/productCleanupService.js';
 
 export const initCleanupCron = () => {
+  
   // Scheduling syntax: "0 0 * * *" means "Run every day at exactly 12:00 AM Midnight"
   cron.schedule('0 0 * * *', async () => {
     console.log('🤖 Running scheduled background task: Purging expired trash items...');
