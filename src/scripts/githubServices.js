@@ -49,7 +49,7 @@ class GithubServices {
   }
 
   async uploadImage(image, folder, sha = null) {
-    console.log('image recieved at uploadImage:', image);
+    console.log('image recieved at uploadImage:', image,folder);
     if (!image) throw new AppError("No image data provided.", 400);
 
     const { data: processedImage } = await convertImage(image);
@@ -58,7 +58,7 @@ class GithubServices {
 
     // 2. Generate Path (Simplified Logic)
 
-    if (!this.allowedFolders.includes(folder)) {
+    if (!this.allowedFolders.includes(folder.toLowerCase())) {
       throw new AppError("Invalid folder destination.", 400);
     }
 
