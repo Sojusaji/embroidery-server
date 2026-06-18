@@ -6,7 +6,9 @@ import cookieParser from 'cookie-parser';
 
 import connectDB from './src/config/db.js'
 
-import adminRoutes from './src/routes/adminAuthRoutes.js';
+import  userAuthRoutes from "./src/routes/userAuthRoutes.js";
+import adminAuthRoutes from './src/routes/adminAuthRoutes.js';
+import adminRoutes from './src/routes/adminRoutes.js'
 import productRoutes from './src/routes/productRoutes.js';
 import orderRoutes from './src/routes/orderRoutes.js';
 import globalErrorHandler from './src/middlewares/errorMiddleware.js';
@@ -26,10 +28,19 @@ app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 app.use(cookieParser());
 
 
-// Routes
-app.use('/api/admin', adminRoutes);
-app.use('/api/products/', productRoutes);
-app.use('/api/orders', orderRoutes);
+// ==========================================
+// AUTHENTICATION ROUTES (Version 1)
+// ==========================================
+
+app.use('/api/v1/auth/users', userAuthRoutes);
+app.use('/api/v1/auth/admins', adminAuthRoutes);
+
+// ==========================================
+// RESOURCE ROUTES (Version 1)
+// ==========================================
+app.use('/api/v1/admins', adminRoutes);     
+app.use('/api/v1/products', productRoutes); 
+app.use('/api/v1/orders', orderRoutes);
 
 
 app.get('/api/health', (req, res) => {
