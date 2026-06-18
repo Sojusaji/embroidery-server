@@ -5,26 +5,56 @@ const userSchema = new Schema({
     type: String,
     required: true,
     trim: true, 
-    lowercase:true
+    lowercase: true
   },
   email: {
     type: String,
-    required: true,
     unique: true,
     lowercase: true,
+    sparse: true,
+    trim: true
+  },
+  
+  mobileNumber: {
+    type: String, 
+    unique: true,
+    sparse: true,
+    trim: true
   },
   password: {
     type: String,
-    required: true,
-    select:false
+    required: function() {
+       return this.role === 'admin' || this.role === 'superAdmin';
+    },
+    select: false,
+    trim: true
   },
-  role: { 
+ 
+  otp: {
     type: String,
-    enum: ['admin', 'superAdmin','user'], 
+    select: false
+  },
+
+  otpExpiry: {
+    type: Date,
+    select: false
+  },
+  role: {
+    type: String,
+    enum: ['admin', 'superAdmin', 'user'],
     default: 'user'
   }
 }, {
   timestamps: true
+});
+
+userSchema.pre('validate', function(next) {
+  if (this.isNew || this.isModified()) {
+    if (!this.email && !this.mobileNumber) {
+      this.invalidate('email', 'An account must feature either an email address or a mobile number.');
+    }
+  }
+  next();
 });
 
 const userModel = model('User', userSchema);
