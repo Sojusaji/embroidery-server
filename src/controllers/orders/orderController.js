@@ -1,4 +1,4 @@
-import orderModel from '../models/Order.js';
+import orderModel from '../../models/Order.js';
 
 // @desc    Create new order (Regular Purchase or Custom Stitching)
 // @route   POST /api/orders

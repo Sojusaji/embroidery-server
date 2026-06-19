@@ -5,7 +5,7 @@ import {
   addAdmin, 
   deleteAdmin, 
   getDashboardSummary 
-} from '../controllers/auth/adminAuthController.js';
+} from '../controllers/admin/adminController.js';
 import authMiddleware, { restrictTo } from '../middlewares/authMiddleware.js';
 
 const router = Router();

@@ -1,6 +1,6 @@
 import { json, Router } from 'express';
 const router = Router();
-import product from '../controllers/productController.js';
+import product from '../controllers/products/productController.js';
 const { getProducts, createProduct, uploadProductImage,
   updateProductImage, deleteProduct,
   purgeTrash, getTrashedProducts, restoreProduct } = product;

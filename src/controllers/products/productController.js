@@ -1,7 +1,7 @@
-import productModel from '../models/Product.js';
-import githubServices from "../scripts/githubServices.js";
-import AppError from '../utils/appError.js';
-import { hardDeleteProducts } from '../scripts/productCleanupService.js';
+import productModel from '../../models/Product.js';
+import githubServices from "../../scripts/githubServices.js";
+import AppError from '../../utils/appError.js';
+import { hardDeleteProducts } from '../../scripts/productCleanupService.js';
 
 
 
