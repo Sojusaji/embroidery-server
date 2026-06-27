@@ -2,7 +2,7 @@ import jwt from 'jsonwebtoken';
 import AppError from '../utils/appError.js';
 
 const authMiddleware = (req, res, next) => {
-  const token = req.cookies.AccessToken || (req.headers.authorization && req.headers.authorization.split(' ')[1]);
+  const token = req.cookies.accessToken || (req.headers.authorization && req.headers.authorization.split(' ')[1]);
   
   if (!token) {
     return next(new AppError('No token, authorization denied', 401));
@@ -10,7 +10,7 @@ const authMiddleware = (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_ACCESS_TOKEN_SECRET);
-    req.admin = {
+    req.user = {
       id: decoded.userId,
       role: decoded.role,
       gmail: decoded.email
@@ -23,7 +23,7 @@ const authMiddleware = (req, res, next) => {
 
 export const restrictTo = (...roles) => {
   return (req, res, next) => {
-    if (!roles.includes(req.admin.role)) {
+    if (!roles.includes(req.user.role)) {
       return next(new AppError('You do not have permission to perform this action', 403));
     }
     next();
