@@ -156,7 +156,7 @@ export const register = async (req, res, next) => {
 
         const emailAlreadyExists = await User.findOne({ email });
         if (emailAlreadyExists) {
-            return next(new AppError("Email already in use. Please login or use another email.", 400));
+            return next(new AppError("Email already in use. Please login or use another email.", 409));
         }
 
         await User.create({
@@ -164,9 +164,9 @@ export const register = async (req, res, next) => {
             email,
         });
 
-        return res.status(200).json({
+        return res.status(201).json({
             success: true,
-            message: "Account registered successfully"
+            message: "Registration successful. Verification required."
         });
     } catch (error) {
         next(error);
