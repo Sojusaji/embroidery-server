@@ -27,16 +27,21 @@ export const verifyUser = async (req, res, next) => {
         const { email } = req.body;
 
 
-        const existingUser = await User.findOne({ email });
-        if (!existingUser) {
-            return next(new AppError("Account not found. Please register first.", 404));
+        const user = await User.findOne({ email });
+        if (!user) {
+            res.status(200).json({
+                success: true,
+                exists: false,
+                user: null,
+                message: "Account does not exist, please register."
+            })
         }
-
-        await createAndSendOtp(email);
 
         return res.status(200).json({
             success: true,
-            message: 'Verification OTP sent successfully.',
+            exists: true,
+            user: { id: user.id, userName: user.username, email: user.email, role: user.role },
+            message: "Account verified successfully."
         });
     } catch (error) {
         next(error);
@@ -135,6 +140,7 @@ export const userLogin = async (req, res, next) => {
 
         return res.status(200).json({
             success: true,
+            user: existingUser,
             message: "Logged in successfully"
         });
     } catch (error) {
