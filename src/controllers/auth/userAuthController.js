@@ -6,10 +6,12 @@ import otpModel from "../../models/Otp.js";
 import tokenModel from "../../models/Token.js";
 import { generateOtp, sendVerificationEmail } from "../../scripts/emailService.js";
 import { generateAccessToken, generateRefreshToken } from "../../utils/generateToken.js";
-
+import { generateGoogleAuthUrl, googleClient } from "../../config/googleAuth.js";
 
 const createAndSendOtp = async (email) => {
+    console.log('createAndSendOtp function recieved email:', email);
     const otp = generateOtp();
+    console.log("otp created is :", otp);
     const dynamicExpiryTime = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
     await otpModel.deleteMany({ email });
@@ -19,17 +21,18 @@ const createAndSendOtp = async (email) => {
         expiresAt: dynamicExpiryTime
     });
 
-    await sendVerificationEmail(email, otp);
+    sendVerificationEmail(email, otp).catch(err => {
+        console.error('Background email delivery failed:', err)
+    });
 };
+
 
 export const verifyUser = async (req, res, next) => {
     try {
-        const { email } = req.body;
+        const userExists = req?.user;
 
-
-        const user = await User.findOne({ email });
-        if (!user) {
-            res.status(200).json({
+        if (!userExists) {
+         return  res.status(200).json({
                 success: true,
                 exists: false,
                 user: null,
@@ -40,7 +43,12 @@ export const verifyUser = async (req, res, next) => {
         return res.status(200).json({
             success: true,
             exists: true,
-            user: { id: user.id, userName: user.username, email: user.email, role: user.role },
+            user: {
+                id: userExists.id,
+                name: userExists.name,
+                email: userExists.email,
+                role: userExists.role
+            },
             message: "Account verified successfully."
         });
     } catch (error) {
@@ -51,8 +59,9 @@ export const verifyUser = async (req, res, next) => {
 
 export const sendOtp = async (req, res, next) => {
     try {
-        const { email } = req.body;
 
+        const { email } = req.body;
+        console.log('email for sending otp is :', email);
         await createAndSendOtp(email);
 
         return res.status(200).json({
@@ -88,7 +97,7 @@ export const userLogin = async (req, res, next) => {
             const verifiedUser = await User.findOneAndUpdate(
                 { email },
                 { $set: { isVerified: true } },
-                { new: true }
+                { returnDocument: 'after' }
             );
 
             if (!verifiedUser) {
@@ -160,7 +169,7 @@ export const register = async (req, res, next) => {
         }
 
         await User.create({
-            name,
+            username: name,
             email,
         });
 
@@ -177,12 +186,12 @@ export const refresh = async (req, res, next) => {
     try {
         const refreshToken = req?.cookies?.refreshToken;
         if (!refreshToken) {
-            return next(new AppError('No refresh token provided', 401));
+            return next(new AppError('We could not find your session. Please login first.', 401));
         }
 
         const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_TOKEN_SECRET);
         if (!decoded) {
-            return next(new AppError('Invalid refresh token', 401));
+            return next(new AppError('Session expired. Please log in again.', 401));
         }
 
 
@@ -201,7 +210,7 @@ export const refresh = async (req, res, next) => {
         }
 
         if (!isTokenMatched) {
-            return next(new AppError('Invalid refresh token. Please login again.', 403));
+            return next(new AppError('Session expired. Please login again.', 403));
         }
 
         const payload = {
@@ -253,3 +262,109 @@ export const userLogout = async (req, res, next) => {
         next(error);
     }
 };
+
+
+
+
+export const getGoogleAuthUrl = (req, res, next) => {
+    try {
+        const returnTo = req.query.returnTo || '/';
+
+        res.cookie("returnTo", returnTo, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            maxAge: 15 * 60 * 1000 //15minit
+        })
+        const authorizeUrl = generateGoogleAuthUrl();
+        console.log('AuthorizedUrl for taking refresh token to send mail:', authorizeUrl);
+        res.redirect(authorizeUrl);
+    } catch (error) {
+        console.error("Google login initiation failed:", error);
+        error.message = "Unable to start Google login. Please try again or use another login method.";
+        next(error)
+    }
+}
+
+
+
+export const googleCallback = async (req, res, next) => {
+
+    const { code } = req.query;
+    const redirectTo = req.cookies.returnTo || "/";
+    res.clearCookie('returnTo');
+    try {
+
+        const response = await googleClient.getToken(code);
+        googleClient.setCredentials(response.tokens)
+
+        const ticket = await googleClient.verifyIdToken({
+            idToken: response.tokens.id_token,
+            audience: process.env.GOOGLE_CLIENT_ID
+        })
+
+        const payload = ticket.getPayload();
+
+        const { sub: googlesub, email, name, picture } = payload;
+
+        let user = await User.findOne({ googlesub });
+        if (!user) {
+            user = await User.create({
+                username: name,
+                email,
+                googlesub,
+                isVerified: true,
+                image: picture
+            })
+        }
+
+        const tokenPayload = {
+            userId: user._id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+        };
+
+        const accessToken = generateAccessToken(tokenPayload);
+        const refreshToken = generateRefreshToken(tokenPayload);
+        const hashedRefreshToken = await hash(refreshToken, 10);
+        const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);  // 7 days
+
+        await tokenModel.deleteMany({
+            userId: user._id,
+            userAgent: req.get('user-agent')
+        });
+
+        await tokenModel.create({
+            userId: user._id,
+            refreshToken: hashedRefreshToken,
+            ipAddress: req.ip,
+            userAgent: req.get('user-agent'),
+            expiresAt
+        });
+
+        res.cookie('refreshToken', refreshToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'none',
+            path: "/api/v1/auth/users/refresh",
+            maxAge: Number(process.env.JWT_REFRESH_TOKEN_EXPIRES),
+        });
+
+        res.cookie('accessToken', accessToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'none',
+            maxAge: Number(process.env.JWT_ACCESS_TOKEN_EXPIRES),
+            path: '/',
+        });
+
+        return res.redirect(`${process.env.FRONTEND_URL}${redirectTo}`);
+
+    } catch (error) {
+        error.message = "Google login failed. Please try again or use another login method.";
+        console.log('error:', error);
+        next(error);
+    }
+
+
+}

@@ -3,9 +3,9 @@ import AppError from '../utils/appError.js';
 
 const authMiddleware = (req, res, next) => {
   const token = req.cookies.accessToken || (req.headers.authorization && req.headers.authorization.split(' ')[1]);
-  
+
   if (!token) {
-    return next(new AppError('No token, authorization denied', 401));
+    return next(new AppError('Authentication required. Please log in first', 401));
   }
 
   try {
@@ -13,11 +13,12 @@ const authMiddleware = (req, res, next) => {
     req.user = {
       id: decoded.userId,
       role: decoded.role,
-      gmail: decoded.email
+      gmail: decoded.email,
+      name: decoded.name
     };
     next();
   } catch (err) {
-    return next(new AppError('Token is not valid', 401));
+    return next(new AppError('Authentication failed. Please log in again.', 401));
   }
 };
 

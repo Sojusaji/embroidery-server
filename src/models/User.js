@@ -1,3 +1,4 @@
+import { parse } from 'dotenv';
 import { Schema, model } from 'mongoose';
 
 const userSchema = new Schema({
@@ -11,9 +12,18 @@ const userSchema = new Schema({
     required: true,
     lowercase: true,
     sparse: true,
-    trim: true
+    trim: true,
   },
-
+  googlesub: {
+    type: String,
+    unique: true,
+    sparse:true
+  },
+  image: {
+    type: String,
+    trim: true,
+    default: ""
+  },
   password: {
     type: String,
     required: function () {
@@ -38,6 +48,6 @@ const userSchema = new Schema({
   timestamps: true
 });
 
-
+userSchema.index({ email: 1 });
 const userModel = model('User', userSchema);
 export default userModel;

@@ -4,6 +4,7 @@ import userModel from '../../models/User.js'
 import tokenModel from '../../models/Token.js';
 import AppError from '../../utils/appError.js';
 import jwt from 'jsonwebtoken';
+import { mailGoogleClient } from "../../config/googleAuth.js";
 
 export const adminLogin = async (req, res, next) => {
 
@@ -175,4 +176,24 @@ export const refresh = async (req, res, next) => {
       username: decoded.name
     }
   })
+}
+
+
+
+export const mailGoogleCallback = async (req, res, next) => {
+  try {
+    const { code } = req.query;
+    console.log('code from code:', code);
+
+    if (!code) {
+      return res.status(400).json({ success: false, message: "Missing code" });
+    }
+    console.log("Code:", code);
+    const { tokens } = await mailGoogleClient.getToken(code);
+    console.log("Refresh Token:", tokens.refresh_token);
+    res.send("Refresh token generated. Save it securely in .env!");
+  } catch (err) {
+    console.error("mailGoogleCallback Error exchanging code:", err);
+    res.status(500).send("Error generating refresh token");
+  }
 }
