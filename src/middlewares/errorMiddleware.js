@@ -58,16 +58,15 @@ const sendErrorProd = (err, res) => {
 
 export default (err, req, res, next) => {
   console.log('Error detected in Global error handler:', err);
-  console.log('this is req datas:', req);
   err.statusCode = err.statusCode || 500;
   err.status = err.status || 'error';
 
 
-  if (req.originalUrl.includes("/auth/users/google/callback") || req.originalUrl.includes("/auth/users/google")){
-    return res.redirect(
-      `${process.env.FRONTEND_URL}/login?error=${encodeURIComponent(err.message)}`
-    );
-  }
+  // if (req.originalUrl.includes("/auth/users/google/callback") || req.originalUrl.includes("/auth/users/google")){
+  //   return res.redirect(
+  //     `${process.env.FRONTEND_URL}/login?error=${encodeURIComponent(err.message)}`
+  //   );
+  // }
 
   if (process.env.NODE_ENV === 'development') {
     sendErrorDev(err, res);

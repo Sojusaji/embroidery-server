@@ -6,7 +6,7 @@ import {
   deleteAdmin, 
   getDashboardSummary 
 } from '../controllers/admin/adminController.js';
-import authMiddleware, { restrictTo } from '../middlewares/authMiddleware.js';
+import {authMiddleware, restrictTo } from '../middlewares/authMiddleware.js';
 
 const router = Router();
 

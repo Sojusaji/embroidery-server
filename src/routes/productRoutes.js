@@ -5,7 +5,7 @@ const { getProducts, createProduct, uploadProductImage,
   updateProductImage, deleteProduct,
   purgeTrash, getTrashedProducts, restoreProduct } = product;
 import { upload } from '../middlewares/upload.js';
-import authMiddleware, { restrictTo } from '../middlewares/authMiddleware.js';
+import {authMiddleware, restrictTo } from '../middlewares/authMiddleware.js';
 
 
 router.post('/image-upload',

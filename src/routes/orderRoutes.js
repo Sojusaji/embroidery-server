@@ -2,7 +2,7 @@ import { Router } from 'express';
 const router = Router();
 import order from '../controllers/orders/orderController.js';
 const { createOrder, getOrders } = order;
-import authMiddleware from '../middlewares/authMiddleware.js';
+import {authMiddleware} from '../middlewares/authMiddleware.js';
 
 router.route('/')
   .post(createOrder)

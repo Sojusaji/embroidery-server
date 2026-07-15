@@ -1,22 +1,24 @@
 import { Router } from "express";
 import {
+    authStatus,
     verifyUser,
     userLogin,
     register,
     sendOtp,
     userLogout,
     refresh,
-    getGoogleAuthUrl,
+    // getGoogleAuthUrl,
     googleCallback
 } from "../controllers/auth/userAuthController.js";
 import { validate } from "../middlewares/validate.js";
 import { userLoginSchema, emailValidationSchema, accountRegistrationSchema } from "../utils/authValidator.js";
-
+import{authMiddleware}from"../middlewares/authMiddleware.js"
 
 const router = Router()
 
+router.get('/auth-status',authMiddleware, authStatus)
 
-router.get('/auth-status', verifyUser);
+router.post('/verify-user',validate(emailValidationSchema) ,verifyUser);
 
 router.post('/login', validate(userLoginSchema), userLogin);
 
@@ -28,7 +30,7 @@ router.post('/logout', userLogout);
 
 router.post('/refresh', refresh);
 
-router.get('/google/callback', googleCallback)
+router.post('/google/callback', googleCallback)
 
-router.get('/google', getGoogleAuthUrl);
+// router.get('/google', getGoogleAuthUrl);
 export default router;

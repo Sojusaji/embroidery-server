@@ -1,4 +1,4 @@
-import { compare } from 'bcryptjs';
+import { compare, hash } from 'bcryptjs';
 import { generateAccessToken, generateRefreshToken } from "../../utils/generateToken.js"
 import userModel from '../../models/User.js'
 import tokenModel from '../../models/Token.js';
@@ -6,13 +6,52 @@ import AppError from '../../utils/appError.js';
 import jwt from 'jsonwebtoken';
 import { mailGoogleClient } from "../../config/googleAuth.js";
 
+
+
+export const getAdminAuthStatus = async (req, res, next) => {
+    try {
+        const userId = req?.user?.id;
+
+        if (!userId) {
+            return next(new AppError('Session expired or invalid. Please log in again.',401));
+        }
+
+        const user = await userModel.findById(userId).select("username image email role");
+
+        if (!user) {
+            return next(new AppError('Account does not exist.',404));
+        }
+
+        if (user.role !== 'admin') {
+            return next(new AppError('Access denied. Admin privileges required.',403));
+        }
+
+        return res.status(200).json({
+            success:true,
+            user: {
+                id: user._id,
+                name: user.username,
+                image: user.image,
+                email: user.email,
+                role: user.role
+            },
+            message: "Admin verified successfully."
+        });
+
+    } catch (error) {
+        next(error);
+    }
+};
+
+
 export const adminLogin = async (req, res, next) => {
 
   const { password, email } = req.body;
-
+  console.log('password and email of admin:', password, email);
   try {
 
     const admin = await userModel.findOne({ email }).select('+password');
+    console.log('admin datas fetched from DB', admin);
     if (!admin) {
       return next(new AppError('Invalid credentials', 401));
     }
@@ -29,13 +68,13 @@ export const adminLogin = async (req, res, next) => {
     res.clearCookie('accessToken', {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'none',
+      sameSite: process.env.NODE_ENV === "production" ? 'none' : 'lax',
       path: '/'
     });
     res.clearCookie('refreshToken', {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: 'none',
+      sameSite: process.env.NODE_ENV === "production" ? 'none' : 'lax',
       path: "/api/v1/auth/admins/refresh",
     });
 
@@ -70,7 +109,7 @@ export const adminLogin = async (req, res, next) => {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       maxAge: Number(process.env.JWT_REFRESH_TOKEN_EXPIRES),
-      sameSite: 'none',
+      sameSite: process.env.NODE_ENV === "production" ? 'none' : 'lax',
       path: '/api/v1/auth/admins/refresh',
     })
 
@@ -78,7 +117,7 @@ export const adminLogin = async (req, res, next) => {
     res.cookie('accessToken', accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'none',
+      sameSite: process.env.NODE_ENV === "production" ? 'none' : 'lax',
       maxAge: Number(process.env.JWT_ACCESS_TOKEN_EXPIRES),
       path: '/'
     });
@@ -104,13 +143,13 @@ export const adminLogout = async (req, res, next) => {
     res.clearCookie('accessToken', {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'none',
+      sameSite: process.env.NODE_ENV === "production" ? 'none' : 'lax',
       path: '/'
     });
     res.clearCookie('refreshToken', {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: 'none',
+      sameSite: process.env.NODE_ENV === "production" ? 'none' : 'lax',
       path: '/api/v1/auth/admins/refresh',
     });
     return res.status(200).json({
@@ -163,7 +202,7 @@ export const refresh = async (req, res, next) => {
   res.cookie('accessToken', newAccessToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'none',
+    sameSite: process.env.NODE_ENV === "production" ? 'none' : 'lax',
     maxAge: Number(process.env.JWT_ACCESS_TOKEN_EXPIRES),
     path: '/',
   })

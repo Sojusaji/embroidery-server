@@ -27,12 +27,60 @@ const createAndSendOtp = async (email) => {
 };
 
 
+
+export const authStatus = async (req, res, next) => {
+    const handleUserNotExists = () => {
+        return res.status(200).json({
+            success: true,
+            exists: false,
+            user: null,
+            message: "Account does not exist, please register."
+        });
+    };
+
+    try {
+        const userId = req?.user?.id;
+
+
+        if (!userId) {
+            return handleUserNotExists();
+        }
+
+
+        const user = await User.findById(userId).select("username image email role");
+
+        if (!user) {
+            return handleUserNotExists();
+        }
+
+        return res.status(200).json({
+            success: true,
+            exists: true,
+            user: {
+                id: user._id,
+                name: user.username,
+                image: user.image,
+                email: user.email,
+                role: user.role
+            },
+            message: "Account verified successfully."
+        });
+
+    } catch (error) {
+        next(error);
+    }
+};
+
+
 export const verifyUser = async (req, res, next) => {
     try {
-        const userExists = req?.user;
+
+        const { email } = req.body;
+
+        const userExists = await User.findOne({ email });
 
         if (!userExists) {
-         return  res.status(200).json({
+            return res.status(200).json({
                 success: true,
                 exists: false,
                 user: null,
@@ -40,12 +88,14 @@ export const verifyUser = async (req, res, next) => {
             })
         }
 
+
+
         return res.status(200).json({
             success: true,
             exists: true,
             user: {
                 id: userExists.id,
-                name: userExists.name,
+                name: userExists.username,
                 email: userExists.email,
                 role: userExists.role
             },
@@ -108,7 +158,7 @@ export const userLogin = async (req, res, next) => {
 
         const tokenPayload = {
             userId: existingUser._id,
-            name: existingUser.name,
+            name: existingUser.username,
             email: existingUser.email,
             role: "user"
         };
@@ -134,7 +184,7 @@ export const userLogin = async (req, res, next) => {
         res.cookie('refreshToken', refreshToken, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
-            sameSite: 'none',
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
             path: "/api/v1/auth/users/refresh",
             maxAge: Number(process.env.JWT_REFRESH_TOKEN_EXPIRES),
         });
@@ -142,7 +192,7 @@ export const userLogin = async (req, res, next) => {
         res.cookie('accessToken', accessToken, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
-            sameSite: 'none',
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
             maxAge: Number(process.env.JWT_ACCESS_TOKEN_EXPIRES),
             path: '/',
         });
@@ -225,7 +275,7 @@ export const refresh = async (req, res, next) => {
         res.cookie('accessToken', accessToken, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
-            sameSite: 'none',
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
             maxAge: Number(process.env.JWT_ACCESS_TOKEN_EXPIRES),
             path: '/',
         });
@@ -244,13 +294,13 @@ export const userLogout = async (req, res, next) => {
         res.clearCookie('accessToken', {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
-            sameSite: 'none',
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
             path: '/'
         });
         res.clearCookie('refreshToken', {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
-            sameSite: 'none',
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
             path: "/api/v1/auth/users/refresh",
         });
 
@@ -266,39 +316,36 @@ export const userLogout = async (req, res, next) => {
 
 
 
-export const getGoogleAuthUrl = (req, res, next) => {
-    try {
-        const returnTo = req.query.returnTo || '/';
+// export const getGoogleAuthUrl = (req, res, next) => {
+//     try {
+//         const returnTo = req.query.returnTo || '/';
 
-        res.cookie("returnTo", returnTo, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            maxAge: 15 * 60 * 1000 //15minit
-        })
-        const authorizeUrl = generateGoogleAuthUrl();
-        console.log('AuthorizedUrl for taking refresh token to send mail:', authorizeUrl);
-        res.redirect(authorizeUrl);
-    } catch (error) {
-        console.error("Google login initiation failed:", error);
-        error.message = "Unable to start Google login. Please try again or use another login method.";
-        next(error)
-    }
-}
+//         res.cookie("returnTo", returnTo, {
+//             httpOnly: true,
+//             secure: process.env.NODE_ENV === "production",
+//             maxAge: 15 * 60 * 1000 //15minit
+//         })
+//         const authorizeUrl = generateGoogleAuthUrl();
+//         console.log('AuthorizedUrl for taking refresh token to send mail:', authorizeUrl);
+//         res.redirect(authorizeUrl);
+//     } catch (error) {
+//         console.error("Google login initiation failed:", error);
+//         error.message = "Unable to start Google login. Please try again or use another login method.";
+//         next(error)
+//     }
+// }
 
 
 
 export const googleCallback = async (req, res, next) => {
 
-    const { code } = req.query;
-    const redirectTo = req.cookies.returnTo || "/";
-    res.clearCookie('returnTo');
+    const { token } = req.body;
+    console.log('token recieped from frontend for googlelogin :', token)
+
     try {
 
-        const response = await googleClient.getToken(code);
-        googleClient.setCredentials(response.tokens)
-
         const ticket = await googleClient.verifyIdToken({
-            idToken: response.tokens.id_token,
+            idToken: token,
             audience: process.env.GOOGLE_CLIENT_ID
         })
 
@@ -308,18 +355,30 @@ export const googleCallback = async (req, res, next) => {
 
         let user = await User.findOne({ googlesub });
         if (!user) {
-            user = await User.create({
-                username: name,
-                email,
-                googlesub,
-                isVerified: true,
-                image: picture
-            })
+            user = await User.findOne({ email })
+            if (user) {
+                user.googlesub = googlesub;
+                user.image = picture;
+                await user.save();
+            } else {
+                user = await User.create({
+                    username: name,
+                    email,
+                    googlesub,
+                    isVerified: true,
+                    image: picture
+                })
+            }
+        } else {
+            if (user.email !== email) {
+                user.email = email;
+                await User.save();
+            }
         }
 
         const tokenPayload = {
             userId: user._id,
-            name: user.name,
+            name: user.username,
             email: user.email,
             role: user.role,
         };
@@ -345,7 +404,7 @@ export const googleCallback = async (req, res, next) => {
         res.cookie('refreshToken', refreshToken, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
-            sameSite: 'none',
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
             path: "/api/v1/auth/users/refresh",
             maxAge: Number(process.env.JWT_REFRESH_TOKEN_EXPIRES),
         });
@@ -353,12 +412,22 @@ export const googleCallback = async (req, res, next) => {
         res.cookie('accessToken', accessToken, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
-            sameSite: 'none',
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
             maxAge: Number(process.env.JWT_ACCESS_TOKEN_EXPIRES),
             path: '/',
         });
 
-        return res.redirect(`${process.env.FRONTEND_URL}${redirectTo}`);
+        return res.status(200).json({
+            success: true,
+            user: {
+                userId: user._id,
+                name: user.username,
+                email: user.email,
+                role: user.role,
+                image: user.image
+            },
+            message: "Logged in successfully"
+        });
 
     } catch (error) {
         error.message = "Google login failed. Please try again or use another login method.";
