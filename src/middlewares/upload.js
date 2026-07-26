@@ -4,22 +4,32 @@ import { extname as _extname } from 'path';
 const storage = multer.memoryStorage();
 
 function checkFileType(file, cb) {
-  const filetypes = /jpg|jpeg|png|webp/;
-  const extname = filetypes.test(_extname(file.originalname).toLowerCase());
-  const mimetype = filetypes.test(file.mimetype);
 
-  if (extname && mimetype) {
+
+  const allowedExtensions = ['jpg', 'jpeg', 'png', 'webp'];
+  const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp'];
+
+  const extname = _extname(file.originalname).toLowerCase().replace('.', '');
+  const isValidExt = allowedExtensions.includes(extname);
+  const isValidMime = allowedMimeTypes.includes(file.mimetype);
+
+  if (isValidExt && isValidMime) {
     return cb(null, true);
-  } else {
-    cb(new Error('Images only!'), false);
   }
+
+  const error = new Error('Only image files (JPG, JPEG, PNG, WEBP) are allowed');
+  error.statusCode = 400;
+
+  return cd(error, false);
 }
 
 export const upload = multer({
   storage,
-  fileFilter: function (req, file, cb) {
-    checkFileType(file, cb);
-  }
+  limits: {
+    fileSize: 5 * 1024 * 1024,
+    files: 1
+  },
+  fileFilter: checkFileType
 });
 
 
