@@ -3,6 +3,7 @@ import { transporter } from '../config/mail.js';
 
 export const generateOtp = () => {
     return Math.floor(100000 + Math.random() * 900000).toString();
+    
 };
 
 

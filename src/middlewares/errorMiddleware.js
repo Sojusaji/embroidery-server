@@ -62,12 +62,6 @@ export default (err, req, res, next) => {
   err.status = err.status || 'error';
 
 
-  // if (req.originalUrl.includes("/auth/users/google/callback") || req.originalUrl.includes("/auth/users/google")){
-  //   return res.redirect(
-  //     `${process.env.FRONTEND_URL}/login?error=${encodeURIComponent(err.message)}`
-  //   );
-  // }
-
   if (process.env.NODE_ENV === 'development') {
     sendErrorDev(err, res);
   } else {

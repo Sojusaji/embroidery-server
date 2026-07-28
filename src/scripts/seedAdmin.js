@@ -1,35 +1,33 @@
 import userModel from "../models/User.js";
-import bcryptjs from 'bcryptjs';
 
 export const createSuperAdmin = async () => {
     console.log('createSuperAdmin is called');
     try {
-        const existingAdmin = await userModel.findOne({ role: 'superAdmin' });
+        const adminEmail = process.env.SUPER_ADMIN_EMAIL?.toLowerCase();
+        const adminName = process.env.SUPER_ADMIN_NAME;
+
+        if (!adminEmail) {
+            console.warn("⚠️ Skipping Super-Admin creation: Missing SUPER_ADMIN_EMAIL in environment variables.");
+            return;
+        }
+
+        const existingAdmin = await userModel.findOne({ email: adminEmail });
         
         if (!existingAdmin) {
-            const adminEmail = process.env.SUPER_ADMIN_EMAIL;
-            const adminPassword = process.env.SUPER_ADMIN_PASSWORD;
-            const adminName = process.env.SUPER_ADMIN_NAME;
-
-            console.log(adminEmail,adminPassword,adminName);
-            if (!adminEmail || !adminPassword) {
-                console.warn("⚠️ Skipping Super-Admin creation: Missing environment variables.");
-                return;
-            }
-
-            const hashedPassword = await bcryptjs.hash(adminPassword, 12);
-
             const newSuperAdmin = await userModel.create({
-                username: adminName.toLowerCase(),
-                email: adminEmail.toLowerCase(),
-                password: hashedPassword, 
+                username: adminName ? adminName.toLowerCase() : 'superadmin',
+                email: adminEmail,
                 role: 'superAdmin',
-                isVerified: true
+                isVerified: true 
             });
 
             console.log("✅ Super-Admin created successfully:", newSuperAdmin.email);
         } else {
-            
+            if (existingAdmin.role !== 'superAdmin') {
+                existingAdmin.role = 'superAdmin';
+                await existingAdmin.save();
+                console.log(`🔄 Upgraded existing user ${adminEmail} to superAdmin.`);
+            }
         }
     } catch (error) {   
         console.error("❌ Error in createSuperAdmin seeding:", error.message);

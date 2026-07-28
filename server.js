@@ -6,8 +6,8 @@ import cookieParser from 'cookie-parser';
 
 import connectDB from './src/config/db.js'
 
-import  userAuthRoutes from "./src/routes/userAuthRoutes.js";
-import adminAuthRoutes from './src/routes/adminAuthRoutes.js';
+import  userAuthRoutes from "./src/routes/authRoutes.js";
+// import adminAuthRoutes from './src/routes/adminAuthRoutes.js';
 import adminRoutes from './src/routes/adminRoutes.js'
 import productRoutes from './src/routes/productRoutes.js';
 import orderRoutes from './src/routes/orderRoutes.js';
@@ -33,7 +33,7 @@ app.use(cookieParser());
 // ==========================================
 
 app.use('/api/v1/auth/users', userAuthRoutes);
-app.use('/api/v1/auth/admins', adminAuthRoutes);
+// app.use('/api/v1/auth/admins', adminAuthRoutes);
 
 // ==========================================
 // RESOURCE ROUTES (Version 1)
