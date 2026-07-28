@@ -1,27 +1,41 @@
 import { json, Router } from 'express';
 const router = Router();
-import product from '../controllers/products/productController.js';
-const { getProducts, createProduct, uploadProductImage,
+import {
+  getProducts, createProduct, uploadProductImage,
   updateProductImage, deleteProduct,
-  purgeTrash, getTrashedProducts, restoreProduct } = product;
+  purgeTrash, getTrashedProducts, restoreProduct,
+  updateProduct
+} from '../controllers/products/productController.js';
+
 import { upload } from '../middlewares/upload.js';
-import {authMiddleware, restrictTo } from '../middlewares/authMiddleware.js';
+import { authMiddleware, restrictTo } from '../middlewares/authMiddleware.js';
+import { createProductSchema, categorySchema, updateProductSchema } from "../../src/utils/authValidator.js";
+import { validate } from "../middlewares/validate.js";
+
+
+
 
 
 router.post('/image-upload',
   authMiddleware,
   restrictTo('admin', 'superAdmin'),
-  upload.single('image'),
+  upload.single('image'), validate(categorySchema),
   uploadProductImage
 );
+
 router.patch('/image-update',
   authMiddleware,
   restrictTo('admin', 'superAdmin'),
   upload.single('image'),
   updateProductImage
-) 
+)
 
-
+router.patch('/product-update/:productId',
+  authMiddleware,
+  restrictTo('admin', 'superAdmin'),
+  validate(updateProductSchema),
+  updateProduct
+)
 
 router.delete('/product-delete',
   authMiddleware,
@@ -31,7 +45,7 @@ router.delete('/product-delete',
 
 router.route('/')
   .get(getProducts)
-  .post(authMiddleware, restrictTo('admin', 'superAdmin'), createProduct);
+  .post(authMiddleware, restrictTo('admin', 'superAdmin'), validate(createProductSchema), createProduct);
 
 
 
