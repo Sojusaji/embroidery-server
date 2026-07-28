@@ -14,7 +14,7 @@ export const authMiddleware = (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_ACCESS_TOKEN_SECRET);
-   console.log('decode:',decoded);
+    console.log('decode:', decoded);
     req.user = {
       id: decoded.userId,
       role: decoded.role,
@@ -38,4 +38,17 @@ export const restrictTo = (...roles) => {
 };
 
 
+//ipWhitelist.js
+const ALLOWED_ADMIN_IPS = ['127.0.0.1', '::1'];
 
+export const restrictToAdminIP = (req, res, next) => {
+  const clientIp = req.ip;
+
+  if (req.user && req.user.role === 'superAdmin') {
+    if (!ALLOWED_ADMIN_IPS.includes(clientIp)) {
+      console.warn(`🚨 Unauthorized superAdmin login attempt blocked from IP: ${clientIp}`);
+      return next(new AppError("Access Denied: Unauthorized location.", 403));
+    }
+  }
+  next();
+};

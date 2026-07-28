@@ -7,10 +7,13 @@ import tokenModel from "../../models/Token.js";
 import { generateOtp, sendVerificationEmail } from "../../scripts/emailService.js";
 import { generateAccessToken, generateRefreshToken } from "../../utils/generateToken.js";
 import { generateGoogleAuthUrl, googleClient } from "../../config/googleAuth.js";
+import { mailGoogleClient } from "../../scripts/generateMailerAuthUrl.js"
+
 
 const createAndSendOtp = async (email) => {
     console.log('createAndSendOtp function recieved email:', email);
     const otp = generateOtp();
+    
     console.log("otp created is :", otp);
     const dynamicExpiryTime = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
@@ -143,6 +146,26 @@ export const userLogin = async (req, res, next) => {
             return next(new AppError("Account data not found. Please register first.", 404));
         }
 
+        if (existingUser?.role === 'admin' || existingUser?.role === 'superAdmin') {
+            const tempToken = jwt.sign(
+                { id: existingUser._id, temp: true },
+                process.env.JWT_ACCESS_TOKEN_SECRET,
+                { expiresIn: '3m' }
+            );
+
+            res.cookie('temp_admin_session', tempToken, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+                maxAge: 3 * 60 * 1000
+            });
+
+            return res.status(200).json({
+                requiresPIN: true,
+                message: "OTP verified. Admin PIN required."
+            });
+        }
+
         if (!existingUser.isVerified) {
             const verifiedUser = await User.findOneAndUpdate(
                 { email },
@@ -199,13 +222,122 @@ export const userLogin = async (req, res, next) => {
 
         return res.status(200).json({
             success: true,
-            user: existingUser,
+            user: {
+                id: existingUser._id,
+                username: existingUser.username,
+                email: existingUser.email,
+                image: existingUser.image,
+                role: "user"
+            },
             message: "Logged in successfully"
         });
     } catch (error) {
         next(error);
     }
 };
+
+
+export const verifyPin = async (req, res, next) => {
+    const { pin } = req.body;
+    console.log("pin recieved from client:", pin);
+
+    const tempToken = req.cookies.temp_admin_session;
+
+    if (!tempToken) {
+        return next(new AppError("Session expired. Please request a new OTP.", 403));
+    }
+
+    try {
+
+        const decoded = jwt.verify(tempToken, process.env.JWT_ACCESS_TOKEN_SECRET);
+        if (!decoded.temp) {
+            return next(new AppError("Invalid session state.", 401));
+        }
+
+        let user = await User.findById(decoded.id);
+        if (!user) return next(new AppError('Admin user not found.', 404));
+        const userEmail = user.email;
+
+        const isPinCorrect = compare(pin, process.env.SUPER_ADMIN_PIN_HASH);
+        if (!isPinCorrect) {
+            return next(new AppError('Incorrect Admin PIN.', 401))
+        }
+
+        res.clearCookie('temp_admin_session');
+
+        if (!user?.isVerified) {
+            const verifiedUser = await User.findOneAndUpdate(
+                { email: userEmail },
+                { $set: { isVerified: true } },
+                { returnDocument: 'after' }
+            );
+
+            if (!verifiedUser) {
+                return next(new AppError("Could not verify your account. Please try again.", 400));
+            }
+            user = verifiedUser;
+        }
+
+        const tokenPayload = {
+            userId: user._id,
+            name: user.username,
+            email: user.email,
+            role: user.role
+        };
+
+        const accessToken = generateAccessToken(tokenPayload);
+        const refreshToken = generateRefreshToken(tokenPayload);
+        const hashedRefreshToken = await hash(refreshToken, 10);
+        const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);  // 7 days
+
+        await tokenModel.deleteMany({
+            userId: user._id,
+            userAgent: req.get('user-agent')
+        });
+
+        await tokenModel.create({
+            userId: user._id,
+            refreshToken: hashedRefreshToken,
+            ipAddress: req.ip,
+            userAgent: req.get('user-agent'),
+            expiresAt
+        });
+
+        res.cookie('refreshToken', refreshToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+            path: "/api/v1/auth/users/refresh",
+            maxAge: Number(process.env.JWT_REFRESH_TOKEN_EXPIRES),
+        });
+
+        res.cookie('accessToken', accessToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+            maxAge: Number(process.env.JWT_ACCESS_TOKEN_EXPIRES),
+            path: '/',
+        });
+
+        return res.status(200).json({
+            success: true,
+            user: {
+                username: user.username,
+                role: user.role,
+                email: user.email
+            },
+            message: "Logged in successfully"
+        });
+
+    } catch (error) {
+        res.clearCookie('temp_admin_session');
+        next(error);
+    }
+};
+
+
+
+
 
 export const register = async (req, res, next) => {
     try {
@@ -315,25 +447,23 @@ export const userLogout = async (req, res, next) => {
 
 
 
+export const mailGoogleCallback = async (req, res, next) => {
+    try {
+        const { code } = req.query;
+        console.log('code from code:', code);
 
-// export const getGoogleAuthUrl = (req, res, next) => {
-//     try {
-//         const returnTo = req.query.returnTo || '/';
-
-//         res.cookie("returnTo", returnTo, {
-//             httpOnly: true,
-//             secure: process.env.NODE_ENV === "production",
-//             maxAge: 15 * 60 * 1000 //15minit
-//         })
-//         const authorizeUrl = generateGoogleAuthUrl();
-//         console.log('AuthorizedUrl for taking refresh token to send mail:', authorizeUrl);
-//         res.redirect(authorizeUrl);
-//     } catch (error) {
-//         console.error("Google login initiation failed:", error);
-//         error.message = "Unable to start Google login. Please try again or use another login method.";
-//         next(error)
-//     }
-// }
+        if (!code) {
+            return res.status(400).json({ success: false, message: "Missing code" });
+        }
+        console.log("Code:", code);
+        const { tokens } = await mailGoogleClient.getToken(code);
+        console.log("Refresh Token:", tokens.refresh_token);
+        res.send("Refresh token generated. Save it securely in .env!");
+    } catch (err) {
+        console.error("mailGoogleCallback Error exchanging code:", err);
+        res.status(500).send("Error generating refresh token");
+    }
+}
 
 
 
