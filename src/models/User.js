@@ -16,20 +16,12 @@ const userSchema = new Schema({
   googlesub: {
     type: String,
     unique: true,
-    sparse:true
+    sparse: true
   },
   image: {
     type: String,
     trim: true,
     default: ""
-  },
-  password: {
-    type: String,
-    required: function () {
-      return this.role === 'admin' || this.role === 'superAdmin';
-    },
-    select: false,
-    trim: true
   },
 
   isVerified: {
@@ -44,9 +36,23 @@ const userSchema = new Schema({
     default: 'user'
   }
 }, {
-  timestamps: true
+  timestamps: true,
+  toJSON:{
+    virtuals:true,
+    transform:(doc,ret)=>{
+      ret.id=ret._id;
+      delete ret._id;
+      delete ret.__v;
+      return ret;
+    }
+  },
+  toObject:{
+    virtuals:true
+  }
+
 });
 
+userSchema.index({username:'text'})
 userSchema.index({ email: 1 });
 const userModel = model('User', userSchema);
 export default userModel;

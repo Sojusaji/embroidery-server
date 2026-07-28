@@ -15,9 +15,23 @@ const otpSchema = new Schema({
     expiresAt: {
         type: Date,
         required: true,
-        // index: { expiresAfterSeconds: 0 }
     }
-}, { timestamps: true });
+}, { timestamps: true,
+    
+    toJSON:{
+        virtuals:true,
+        transform:(doc,ret)=>{
+            ret.id=ret._id;
+            delete ret._id;
+            delete ret.__v;
+            return ret;
+        }
+    },
+    toObject:{
+        virtuals:true
+    }
+
+ });
 
 otpSchema.index({expiresAt:1},{expireAfterSeconds:0});
 

@@ -4,18 +4,34 @@ const productSchema = new Schema({
   name: {
     type: String,
     required: true,
+    trim: true,
+    maxlength: 120,
   },
   description: {
     type: String,
     required: true,
+    trim: true,
+    maxlength: 2000,
   },
   price: {
     type: Number,
     required: true,
+    min: [0, 'Price must be positive']
+  },
+  comparePrice: {
+    type: Number,
+    default: null
+  },
+  sku: {
+    type: String,
+    required: true,
+    trim: true,
+    uppercase: true,
+    index: true,
   },
   image: {
     type: String,
-    required: true, // Path to image
+    required: [true, 'Main product image URL is required'],
   },
   imageInfo: {
     filePath: {
@@ -29,7 +45,9 @@ const productSchema = new Schema({
   },
   category: {
     type: String,
-    required: true,
+    required: [true, 'Category is required'],
+    enum: ['embroidery', 'stitching', 'ornaments'],
+    index: true,
   },
   totalStock: {
     type: Number,
@@ -45,17 +63,53 @@ const productSchema = new Schema({
   inStock: {
     type: Boolean,
     default: true,
+    index: true,
   },
-  isDeleted: {
+  status: {
+    type: String,
+    required: true,
+    enum: ['active', 'draft'],
+    default: 'active',
+    index: true
+  },
+  tags: [
+    {
+      type: String,
+      trim: true
+    }
+  ],
+  isFeatured: {
     type: Boolean,
     default: false
   },
+  isDeleted: {
+    type: Boolean,
+    default: false,
+    select: false,
+    index:true
+  },
   deletedAt: {
     type: Date,
-    default: null
+    default: null,
+    select: false
   }
-}, { timestamps: true });
+}, {
+  timestamps: true,
+  toJSON: {
+    virtuals: true,
+    transform: (doc, ret) => {
+      ret.id = ret._id;
+      delete ret._id;
+      delete ret.__v;
+      return ret;
+    },
+  },
+  toObject: { virtuals: true },
+}
 
+);
+productSchema.index({ name: 'text', description: 'text', tags: 'text' });
+productSchema.index({ category: 1, status: 1, isDeleted: 1 });
 
 const productModel = model('Products', productSchema);
 export default productModel;
