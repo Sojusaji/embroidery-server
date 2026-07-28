@@ -3,9 +3,13 @@ import { extname as _extname } from 'path';
 
 const storage = multer.memoryStorage();
 
-function checkFileType(file, cb) {
-
-
+function checkFileType(req, file, cb) {
+  console.log('checkFileType recieved this data:', file);
+  if (!file || !file.originalname) {
+    const error = new Error('No image file uploaded');
+    error.statusCode = 400;
+    return cb(error, false);
+  }
   const allowedExtensions = ['jpg', 'jpeg', 'png', 'webp'];
   const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp'];
 
