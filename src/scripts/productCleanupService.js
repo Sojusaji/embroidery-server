@@ -11,16 +11,18 @@ export const hardDeleteProducts = async (products) => {
       const filePath = product.imageInfo?.filePath;
       const sha = product.imageInfo?.sha;
 
-      
+
       if (sha && filePath) {
         await githubServices.deleteImage(sha, filePath);
+
       }
 
-    
       await productModel.findByIdAndDelete(product._id);
+
       deletedCount++;
     } catch (error) {
       console.error(`Failed to purge product ${product._id}:`, error);
+      return null;
     }
   }
 

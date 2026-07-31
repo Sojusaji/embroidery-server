@@ -286,7 +286,7 @@ export const restoreProduct = async (req, res, next) => {
 // PERMANENT MANUAL PURGE
 export const purgeTrash = async (req, res, next) => {
   const { productId } = req.body;
-
+  console.log('we recieved this product for delete permanently:', productId);
   try {
     let productsToPurge = [];
 
@@ -305,7 +305,10 @@ export const purgeTrash = async (req, res, next) => {
     }
 
     const totalPurged = await hardDeleteProducts(productsToPurge);
-
+    
+    if (totalPurged === null) {
+      return next(new AppError('Unable to permanently delete these items at this time. Please try again later.', 500))
+    }
     return res.status(200).json({
       success: true,
       message: `Successfully purged ${totalPurged} item(s) permanently.`

@@ -108,6 +108,7 @@ class GithubServices {
         message: 'Image deleted successfully'
       }
     } catch (error) {
+      console.log('error from image delete script:',error);
       throw new AppError(`GitHub Fetch Error:${error.message}`, error.status || 500);
     }
   }
