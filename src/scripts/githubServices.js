@@ -15,7 +15,7 @@ class GithubServices {
 
     this.owner = process.env.GITHUB_OWNER;
     this.repo = process.env.GITHUB_REPO;
-    this.allowedFolders = ['embroidery', 'stitching', 'rolled-gold-ornaments'];
+    this.allowedFolders = ['embroidery', 'stitching', 'ornaments'];
 
     this.octokit = new MyOctokit({
       auth: process.env.GITHUB_TOKEN,
