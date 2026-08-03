@@ -1,4 +1,4 @@
-import { json, Router } from 'express';
+import { Router } from 'express';
 const router = Router();
 import {
   getProducts, createProduct, uploadProductImage,
@@ -29,6 +29,7 @@ router.patch('/image-update',
   upload.single('image'),
   updateProductImage
 )
+
 
 router.patch('/product-update/:productId',
   authMiddleware,

@@ -8,7 +8,6 @@ const MyOctokit = Octokit.plugin(throttling);
 
 class GithubServices {
   constructor() {
-    // Validate required environment variables
     if (!process.env.GITHUB_TOKEN || !process.env.GITHUB_OWNER || !process.env.GITHUB_REPO) {
       throw new AppError("GitHub configuration is missing from environment variables.", 500);
     }
@@ -49,14 +48,11 @@ class GithubServices {
   }
 
   async uploadImage(image, folder, sha = null) {
-    console.log('image recieved at uploadImage:', image,folder);
     if (!image) throw new AppError("No image data provided.", 400);
 
     const { data: processedImage } = await convertImage(image);
 
     console.log('processedImage:', processedImage);
-
-    // 2. Generate Path (Simplified Logic)
 
     if (!this.allowedFolders.includes(folder.toLowerCase())) {
       throw new AppError("Invalid folder destination.", 400);
@@ -66,10 +62,8 @@ class GithubServices {
     const filePath = `${folder}/${fileName}`;
 
     try {
-      // 3. Encode to Base64
       const contentEncoded = Buffer.from(processedImage).toString("base64");
       console.log('contentencoded', contentEncoded);
-      // 4. Upload to GitHub
       const response = await this.octokit.rest.repos.createOrUpdateFileContents({
         owner: this.owner,
         repo: this.repo,
@@ -108,31 +102,51 @@ class GithubServices {
         message: 'Image deleted successfully'
       }
     } catch (error) {
-      console.log('error from image delete script:',error);
+      console.log('error from image delete script:', error);
       throw new AppError(`GitHub Fetch Error:${error.message}`, error.status || 500);
     }
   }
 
-  async updateImage(image, sha, filePath) {
-    if (!image || !sha || !filePath) {
-      throw new AppError('Data Is Missing', 400);
+  async updateImage(image, oldSha, oldFilePath, folder) {
+    if (!image || !oldSha || !oldFilePath || !folder) {
+      throw new AppError('Data Is Missing for image update', 400);
     }
+
+    if (!this.allowedFolders.includes(folder.toLowerCase())) {
+      throw new AppError("Invalid folder destination.", 400);
+    }
+
     const { data: processedImage } = await convertImage(image);
     const contentEncoded = Buffer.from(processedImage).toString("base64");
+
+    const newFileName = generateFileName();
+    const newFilePath = `${folder}/${newFileName}`;
+
     try {
-      const response = await this.octokit.rest.repos.createOrUpdateFileContents({
+      const uploadResponse = await this.octokit.rest.repos.createOrUpdateFileContents({
         owner: this.owner,
         repo: this.repo,
-        message: `feat: image update`,
+        message: `feat: add updated image ${newFileName}`,
         content: contentEncoded,
-        path: filePath,
-        sha: sha
+        path: newFilePath,
       })
+      try {
+        await this.octokit.rest.repos.deleteFile({
+          owner: this.owner,
+          repo: this.repo,
+          path: oldFilePath,
+          message: `chore: cleanup old image ${oldFilePath}`,
+          sha: oldSha,
+        })
+      } catch (deleteError) {
+        console.warn('Warning: Failed to delete old image file during update:', deleteError.message);
+      }
+
       return {
         success: true,
-        imageUrl: response.data.content.download_url,
-        sha: response.data.content.sha,
-        filePath,
+        imageUrl: uploadResponse.data.content.download_url,
+        sha: uploadResponse.data.content.sha,
+        filePath: newFilePath,
       }
     } catch (error) {
       throw new AppError(`GitHub Fetch Error:${error.message}`, error.status || 500);

@@ -21,11 +21,12 @@ export const validate = (schema) => {
 
 
             if (value.query) {
-                Object.keys(req.query).forEach((key) => delete req.query[key]); 
+                Object.keys(req.query).forEach((key) => delete req.query[key]);
                 Object.assign(req.query, value.query);
             }
-           
+
             return next();
+
         } catch (error) {
             console.log('error occuired :', error);
             if (error.isJoi || error.details) {

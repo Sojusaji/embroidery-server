@@ -19,35 +19,6 @@ export const getProducts = async (req, res, next) => {
 
 
 
-
-// @desc    Create a product (Admin)
-// @route   POST /api/products
-// @access  Private/Admin
-
-
-// product datas recieved from createProduct route: {
-//   name: 'Golden Leaf Velvet',
-//   description: 'A luxurious velvet fabric featuring intricate golden leaf embroidery. Perfect for high-end fashion designs and statement pieces.',
-//   price: 120,
-//   comparePrice: 340,
-//   sku: 'EMB-001',
-//   totalStock: 15,
-//   category: 'embroidery',
-//   status: 'active',
-//   tags: [
-//     'Premium Velvet Fabric',
-//     'Hand-stitched Gold Threading',
-//     'Durable and Soft Texture',
-//     'Ideal for Evening Wear'
-//   ],
-//   isFeatured: false,
-//   inStock: true,
-//   image: 'https://raw.githubusercontent.com/Sojusaji/product-images/main/embroidery/1784887375382-48fb668b-dd34-42b6-b6af-b3f915df39e0.webp',
-//   imageInfo: {
-//     filePath: 'embroidery/1784887375382-48fb668b-dd34-42b6-b6af-b3f915df39e0.webp',
-//     sha: '9add35bfa2b5b47c589c7c521a4c36cb714be4ef'
-//   }
-// }
 export const createProduct = async (req, res, next) => {
   try {
     const { name, description, price, comparePrice, sku, totalStock,
@@ -117,16 +88,16 @@ export const updateProductImage = async (req, res, next) => {
     if (!req.file || !req.file.buffer) {
       return next(new AppError('No image file provided', 400));
     }
-    console.log('req.body:', req.body);
-    const { filePath, sha } = req.body;
-    if (!filePath || !sha) {
+    const { filePath, sha, folder } = req.body;
+    if (!filePath || !sha || !folder) {
       return next(new AppError('Image datas are missing', 400));
     }
 
     const result = await githubServices.updateImage(
       req.file.buffer,
       sha,
-      filePath
+      filePath,
+      folder
     );
     res.status(201).json({
       success: true,
@@ -206,7 +177,7 @@ export const updateProduct = async (req, res, next) => {
       return next(new AppError('Product not found', 404));
     }
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: 'Product updated successfully',
       data: updatedProduct,
@@ -305,7 +276,7 @@ export const purgeTrash = async (req, res, next) => {
     }
 
     const totalPurged = await hardDeleteProducts(productsToPurge);
-    
+
     if (totalPurged === null) {
       return next(new AppError('Unable to permanently delete these items at this time. Please try again later.', 500))
     }
