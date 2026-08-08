@@ -237,6 +237,16 @@ const objectIdValidator = (value, helpers) => {
   return value;
 };
 
+
+export const getOneProductSchema = joi.object({
+  params: joi.object({
+    productId: joi.string().custom(objectIdValidator).required().messages({
+      'any.required': 'Product ID is required ',
+    }),
+  }).required(),
+})
+
+
 export const updateProductSchema = joi.object({
   params: joi.object({
     productId: joi.string().custom(objectIdValidator).required().messages({
