@@ -4,14 +4,28 @@ import {
   getProducts, createProduct, uploadProductImage,
   updateProductImage, deleteProduct,
   purgeTrash, getTrashedProducts, restoreProduct,
-  updateProduct
+  updateProduct,
+  getHomeFeed,
+  getProductById
 } from '../controllers/products/productController.js';
 
 import { upload } from '../middlewares/upload.js';
 import { authMiddleware, restrictTo } from '../middlewares/authMiddleware.js';
-import { createProductSchema, categorySchema, updateProductSchema } from "../../src/utils/authValidator.js";
+import { createProductSchema, categorySchema, updateProductSchema, getOneProductSchema } from "../../src/utils/authValidator.js";
 import { validate } from "../middlewares/validate.js";
 
+
+router.get('/home-feed',getHomeFeed);
+
+router.get('/product-trash',
+  authMiddleware,
+  restrictTo('admin', 'superAdmin'),
+  getTrashedProducts
+);
+
+router.route('/')
+  .get(getProducts)
+  .post(authMiddleware, restrictTo('admin', 'superAdmin'), validate(createProductSchema), createProduct);
 
 
 
@@ -30,6 +44,7 @@ router.patch('/image-update',
   updateProductImage
 )
 
+router.get('/:productId',validate(getOneProductSchema),getProductById);
 
 router.patch('/product-update/:productId',
   authMiddleware,
@@ -43,19 +58,6 @@ router.delete('/product-delete',
   restrictTo('admin', 'superAdmin'),
   deleteProduct
 )
-
-router.route('/')
-  .get(getProducts)
-  .post(authMiddleware, restrictTo('admin', 'superAdmin'), validate(createProductSchema), createProduct);
-
-
-
-
-router.get('/product-trash',
-  authMiddleware,
-  restrictTo('admin', 'superAdmin'),
-  getTrashedProducts
-);
 
 
 router.post('/product-restore',

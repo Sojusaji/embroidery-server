@@ -8,6 +8,76 @@ import { hardDeleteProducts } from '../../scripts/productCleanupService.js';
 // @desc    Fetch all products
 // @route   GET /api/products
 // @access  Public
+// controllers/productController.js
+
+export const getHomeFeed = async (req, res) => {
+  try {
+    const result = await productModel.aggregate([
+      { $match: { status: 'active', isDeleted: false } },
+      {
+        $facet: {
+          featured: [
+            { $match: { isFeatured: true } },
+            { $project: { _id: 1, name: 1, price: 1, image: 1, category: 1 } },
+            { $limit: 4 }
+          ],
+          latest: [
+            { $sort: { createdAt: -1 } },
+            { $project: { _id: 1, name: 1, price: 1, image: 1, category: 1 } },
+            { $limit: 8 }
+          ]
+        }
+      },
+    ]);
+
+    let { featured, latest } = result[0];
+
+    // if (featured.length === 0) {
+    //   featured = latest.slice(4, 8);
+
+    //    Ultimate fallback if inventory < 8
+    //   if (featured.length === 0) {
+    //     featured = latest.slice(0, 4);
+    //   }
+    // }
+
+    //  Only return 4 latest items
+    // latest = latest.slice(0, 4);
+
+    return res.status(200).json({
+      success: true,
+      featured,
+      latest
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getProductById = async (req, res, next) => {
+  try {
+    const { productId } = req.params;
+
+    const product = await productModel.findOne({
+      _id: productId,
+      isDeleted: false,
+      status: 'active'
+    });
+
+    if (!product) {
+      return next(new AppError("Product not found or unavailable.", 404));
+    }
+
+    return res.status(200).json({
+      success: true,
+      product
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
 export const getProducts = async (req, res, next) => {
   try {
     const products = await productModel.find({ isDeleted: false }).sort({ createdAt: -1 });
