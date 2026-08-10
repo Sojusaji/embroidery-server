@@ -10,49 +10,91 @@ import { hardDeleteProducts } from '../../scripts/productCleanupService.js';
 // @access  Public
 // controllers/productController.js
 
-export const getHomeFeed = async (req, res) => {
+// controllers/productController.js
+
+// 1. Get Paginated Featured Products
+// 1. Get Featured Products
+export const getFeaturedProducts = async (req, res, next) => {
   try {
-    const result = await productModel.aggregate([
-      { $match: { status: 'active', isDeleted: false } },
+    const limit = parseInt(req.query.limit, 10) || 10;
+
+    const [result] = await productModel.aggregate([
+      {
+        $match: {
+          status: 'active',
+          isDeleted: false,
+          isFeatured: true,
+        },
+      },
       {
         $facet: {
-          featured: [
-            { $match: { isFeatured: true } },
-            { $project: { _id: 1, name: 1, price: 1, image: 1, category: 1 } },
-            { $limit: 4 }
-          ],
-          latest: [
+          products: [
             { $sort: { createdAt: -1 } },
-            { $project: { _id: 1, name: 1, price: 1, image: 1, category: 1 } },
-            { $limit: 8 }
-          ]
-        }
+            { $project: { _id: 1, image: 1, name: 1, category: 1, price: 1 } },
+            { $limit: limit },
+          ],
+          totalProductCount: [
+            { $count: 'count' },
+          ],
+        },
       },
     ]);
 
-    let { featured, latest } = result[0];
+    // Safely extract data from the aggregation result object
+    const products = result?.products ?? [];
+    const totalCount = result?.totalProductCount?.[0]?.count ?? 0;
 
-    // if (featured.length === 0) {
-    //   featured = latest.slice(4, 8);
-
-    //    Ultimate fallback if inventory < 8
-    //   if (featured.length === 0) {
-    //     featured = latest.slice(0, 4);
-    //   }
-    // }
-
-    //  Only return 4 latest items
-    // latest = latest.slice(0, 4);
-
-    return res.status(200).json({
-      success: true,
-      featured,
-      latest
-    });
+    return res.status(200).json({ success: true, products, totalCount });
   } catch (error) {
     next(error);
   }
 };
+
+// 2. Get Paginated Latest Products
+export const getLatestProducts = async (req, res, next) => {
+  try {
+    const limit = parseInt(req.query.limit, 10) || 10;
+
+    const [result] = await productModel.aggregate([
+      {
+        $match: {
+          status: 'active',
+          isDeleted: false,
+          isFeatured: false,
+        },
+      },
+      {
+        $facet: {
+          latestProducts: [
+            { $sort: { createdAt: -1 } },
+            {
+              $project: {
+                _id: 1,
+                name: 1,
+                category: 1,
+                price: 1,
+                image: 1
+              }
+            },
+            { $limit: limit },
+          ],
+          totalProducts: [
+            { $count: 'count' },
+          ],
+        },
+      },
+    ]);
+
+    // Safely extract data from the aggregation result object
+    const latestProducts = result?.latestProducts ?? [];
+    const totalCount = result?.totalProducts?.[0]?.count ?? 0;
+
+    return res.status(200).json({ success: true, latestProducts, totalCount });
+  } catch (error) {
+    next(error);
+  }
+};
+
 
 export const getProductById = async (req, res, next) => {
   try {

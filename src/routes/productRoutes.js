@@ -5,8 +5,9 @@ import {
   updateProductImage, deleteProduct,
   purgeTrash, getTrashedProducts, restoreProduct,
   updateProduct,
-  getHomeFeed,
-  getProductById
+  getFeaturedProducts,
+  getLatestProducts,
+  getProductById,
 } from '../controllers/products/productController.js';
 
 import { upload } from '../middlewares/upload.js';
@@ -15,7 +16,8 @@ import { createProductSchema, categorySchema, updateProductSchema, getOneProduct
 import { validate } from "../middlewares/validate.js";
 
 
-router.get('/home-feed',getHomeFeed);
+router.get('/featured', getFeaturedProducts);
+router.get('/latest', getLatestProducts);
 
 router.get('/product-trash',
   authMiddleware,
@@ -44,7 +46,7 @@ router.patch('/image-update',
   updateProductImage
 )
 
-router.get('/:productId',validate(getOneProductSchema),getProductById);
+router.get('/:productId', validate(getOneProductSchema), getProductById);
 
 router.patch('/product-update/:productId',
   authMiddleware,
