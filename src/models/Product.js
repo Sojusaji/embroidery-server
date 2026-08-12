@@ -86,7 +86,7 @@ const productSchema = new Schema({
     type: Boolean,
     default: false,
     select: false,
-    index:true
+    index: true
   },
   deletedAt: {
     type: Date,
@@ -109,7 +109,7 @@ const productSchema = new Schema({
 
 );
 productSchema.index({ name: 'text', description: 'text', tags: 'text' });
-productSchema.index({ category: 1, status: 1, isDeleted: 1 });
+productSchema.index({ category: 1, status: 1, isDeleted: 1, _id: -1, createdAt: -1 });
 
 const productModel = model('Products', productSchema);
 export default productModel;

@@ -14,38 +14,91 @@ import { hardDeleteProducts } from '../../scripts/productCleanupService.js';
 
 // 1. Get Paginated Featured Products
 // 1. Get Featured Products
+
+const pipeline = async (matchedQuery,limit) => {
+  const [result] = await productModel.aggregate([
+    { $match: matchedQuery },
+    { $sort: { createdAt: -1, _id: -1 } },
+    { $limit: limit + 1 },
+    {
+      $project: {
+        _id: 1,
+        name: 1,
+        price: 1,
+        category: 1,
+        createdAt: 1,
+        image: 1
+      }
+    }
+  ])
+
+  const products = result ?? [];
+
+  let nextCursor = null;
+
+  const hasNextPage = products.length > limit;
+
+  if (hasNextPage) {
+
+    products.pop();
+    const lastItem = products[products.length - 1];
+
+    const rawCursor = JSON.stringify({
+      createdAt: lastItem.createdAt,
+      id: lastItem.id
+    })
+
+    nextCursor = Buffer.from(rawCursor).toString('base64');
+  }
+
+  return {
+    products,
+    pagination: {
+      nextCursor,
+      hasNextPage,
+    }
+  }
+
+}
+
+
+
 export const getFeaturedProducts = async (req, res, next) => {
   try {
     const limit = parseInt(req.query.limit, 10) || 10;
+    const { cursor } = req.query;
 
-    const [result] = await productModel.aggregate([
-      {
-        $match: {
-          status: 'active',
-          isDeleted: false,
-          isFeatured: true,
-        },
-      },
-      {
-        $facet: {
-          products: [
-            { $sort: { createdAt: -1 } },
-            { $project: { _id: 1, image: 1, name: 1, category: 1, price: 1 } },
-            { $limit: limit },
-          ],
-          totalProductCount: [
-            { $count: 'count' },
-          ],
-        },
-      },
-    ]);
+    let matchedQuery = {
+      status: 'active',
+      isDeleted: false,
+      isFeatured: true,
+    }
 
-    // Safely extract data from the aggregation result object
-    const products = result?.products ?? [];
-    const totalCount = result?.totalProductCount?.[0]?.count ?? 0;
+    if (cursor) {
+      try {
+        const decodedCursor = JSON.parse(Buffer.from(cursor, 'base64').toString('utf-8'));
+        matchedQuery.$or = [
+          {
+            createdAt: { $lt: new Date(decodedCursor.createdAt) }
+          },
+          {
+            createdAt: new Date(decodedCursor.createdAt),
+           _id: { $lt: new mongoose.Types.ObjectId(decodedCursor.id) }
+          }
+        ]
+      } catch (error) {
+        return res.status(400).json({ success: false, message: 'We are not able to fetch datas right now. Try agian leter' });
+      }
+    }
 
-    return res.status(200).json({ success: true, products, totalCount });
-  } catch (error) {
+    const result = await pipeline(matchedQuery,limit);
+
+    return res.status(200).json({
+      success: true,
+      ...result
+    })
+  }
+  catch (error) {
     next(error);
   }
 };
@@ -54,42 +107,38 @@ export const getFeaturedProducts = async (req, res, next) => {
 export const getLatestProducts = async (req, res, next) => {
   try {
     const limit = parseInt(req.query.limit, 10) || 10;
+    const { cursor } = req.query;
 
-    const [result] = await productModel.aggregate([
-      {
-        $match: {
-          status: 'active',
-          isDeleted: false,
-          isFeatured: false,
-        },
-      },
-      {
-        $facet: {
-          latestProducts: [
-            { $sort: { createdAt: -1 } },
-            {
-              $project: {
-                _id: 1,
-                name: 1,
-                category: 1,
-                price: 1,
-                image: 1
-              }
-            },
-            { $limit: limit },
-          ],
-          totalProducts: [
-            { $count: 'count' },
-          ],
-        },
-      },
-    ]);
+    let matchedQuery = {
+      status: 'active',
+      isDeleted: false,
+      isFeatured: false
+    }
 
-    // Safely extract data from the aggregation result object
-    const latestProducts = result?.latestProducts ?? [];
-    const totalCount = result?.totalProducts?.[0]?.count ?? 0;
+    if (cursor) {
+      try {
+        const decodedCursor = JSON.parse(Buffer.from(cursor, 'base64').toString('utf-8'));
+        matchedQuery.$or = [
+          {
+            createdAt: { $lt: new Date(decodedCursor.createdAt) }
+          },
+          {
+            createdAt: new Date(decodedCursor.createdAt),
+           _id: { $lt: new mongoose.Types.ObjectId(decodedCursor.id) }
+          }
+        ]
+      } catch (error) {
+        return res.status(400).json({ success: false, message: 'We are not able to fetch datas right now. Try agian leter' });
+      }
+    }
 
-    return res.status(200).json({ success: true, latestProducts, totalCount });
+    const result = await pipeline(matchedQuery,limit);
+
+    return res.status(200).json({
+      success: true,
+      ...result
+    })
+
   } catch (error) {
     next(error);
   }
