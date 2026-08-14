@@ -1,28 +1,22 @@
+import mongoose from 'mongoose';
 import productModel from '../../models/Product.js';
 import githubServices from "../../scripts/githubServices.js";
 import AppError from '../../utils/appError.js';
 import { hardDeleteProducts } from '../../scripts/productCleanupService.js';
 
-
-
 // @desc    Fetch all products
 // @route   GET /api/products
 // @access  Public
-// controllers/productController.js
 
-// controllers/productController.js
-
-// 1. Get Paginated Featured Products
-// 1. Get Featured Products
-
-const pipeline = async (matchedQuery,limit) => {
-  const [result] = await productModel.aggregate([
+const pipeline = async ({ matchedQuery, limit }) => {
+  const result = await productModel.aggregate([
     { $match: matchedQuery },
     { $sort: { createdAt: -1, _id: -1 } },
     { $limit: limit + 1 },
     {
       $project: {
         _id: 1,
+        id: '$_id',
         name: 1,
         price: 1,
         category: 1,
@@ -30,23 +24,21 @@ const pipeline = async (matchedQuery,limit) => {
         image: 1
       }
     }
-  ])
+  ]);
 
   const products = result ?? [];
-
   let nextCursor = null;
 
   const hasNextPage = products.length > limit;
 
   if (hasNextPage) {
-
     products.pop();
     const lastItem = products[products.length - 1];
 
     const rawCursor = JSON.stringify({
       createdAt: lastItem.createdAt,
-      id: lastItem.id
-    })
+      id: lastItem._id || lastItem.id
+    });
 
     nextCursor = Buffer.from(rawCursor).toString('base64');
   }
@@ -57,48 +49,45 @@ const pipeline = async (matchedQuery,limit) => {
       nextCursor,
       hasNextPage,
     }
+  };
+};
+
+// Reusable Paginated Product Fetcher (DRY Principle)
+const fetchPaginatedProducts = async (req, extraMatch = {}) => {
+  const limit = parseInt(req.query.limit, 10) || 10;
+  const { cursor } = req.query;
+
+  let matchedQuery = {
+    status: 'active',
+    isDeleted: false,
+    ...extraMatch
+  };
+
+  if (cursor) {
+    const decodedCursor = JSON.parse(Buffer.from(cursor, 'base64').toString('utf-8'));
+    matchedQuery.$or = [
+      {
+        createdAt: { $lt: new Date(decodedCursor.createdAt) }
+      },
+      {
+        createdAt: new Date(decodedCursor.createdAt),
+        _id: { $lt: new mongoose.Types.ObjectId(decodedCursor.id) }
+      }
+    ];
   }
 
-}
+  return await pipeline({ matchedQuery, limit });
+};
 
-
-
+// 1. Get Paginated Featured Products
 export const getFeaturedProducts = async (req, res, next) => {
   try {
-    const limit = parseInt(req.query.limit, 10) || 10;
-    const { cursor } = req.query;
-
-    let matchedQuery = {
-      status: 'active',
-      isDeleted: false,
-      isFeatured: true,
-    }
-
-    if (cursor) {
-      try {
-        const decodedCursor = JSON.parse(Buffer.from(cursor, 'base64').toString('utf-8'));
-        matchedQuery.$or = [
-          {
-            createdAt: { $lt: new Date(decodedCursor.createdAt) }
-          },
-          {
-            createdAt: new Date(decodedCursor.createdAt),
-           _id: { $lt: new mongoose.Types.ObjectId(decodedCursor.id) }
-          }
-        ]
-      } catch (error) {
-        return res.status(400).json({ success: false, message: 'We are not able to fetch datas right now. Try agian leter' });
-      }
-    }
-
-    const result = await pipeline(matchedQuery,limit);
-
+    const result = await fetchPaginatedProducts(req, { isFeatured: true });
     return res.status(200).json({
       success: true,
       ...result
-    })
-  }
-  catch (error) {
+    });
+  } catch (error) {
     next(error);
   }
 };
@@ -106,39 +95,11 @@ export const getFeaturedProducts = async (req, res, next) => {
 // 2. Get Paginated Latest Products
 export const getLatestProducts = async (req, res, next) => {
   try {
-    const limit = parseInt(req.query.limit, 10) || 10;
-    const { cursor } = req.query;
-
-    let matchedQuery = {
-      status: 'active',
-      isDeleted: false,
-      isFeatured: false
-    }
-
-    if (cursor) {
-      try {
-        const decodedCursor = JSON.parse(Buffer.from(cursor, 'base64').toString('utf-8'));
-        matchedQuery.$or = [
-          {
-            createdAt: { $lt: new Date(decodedCursor.createdAt) }
-          },
-          {
-            createdAt: new Date(decodedCursor.createdAt),
-           _id: { $lt: new mongoose.Types.ObjectId(decodedCursor.id) }
-          }
-        ]
-      } catch (error) {
-        return res.status(400).json({ success: false, message: 'We are not able to fetch datas right now. Try agian leter' });
-      }
-    }
-
-    const result = await pipeline(matchedQuery,limit);
-
+    const result = await fetchPaginatedProducts(req, { isFeatured: false });
     return res.status(200).json({
       success: true,
       ...result
-    })
-
+    });
   } catch (error) {
     next(error);
   }
