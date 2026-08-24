@@ -6,6 +6,10 @@ const orderSchema = new Schema({
     ref: 'User',
     required: true
   },
+  customerEmail: {
+    type: String,
+    required: true
+  },
   orderType: {
     type: String,
     enum: ['PRODUCT_PURCHASE', 'CUSTOM_STITCHING'],
@@ -58,7 +62,7 @@ const orderSchema = new Schema({
   },
   deliveryAddress: {
     fullName: { type: String, required: true },
-    phone: { type: String, required: true }, 
+    phone: { type: String, required: true },
     addressLine: { type: String, required: true },
     city: { type: String, required: true },
     postalCode: { type: String, required: true },
@@ -79,7 +83,7 @@ const orderSchema = new Schema({
     razorpayOrderId: { type: String },
     razorpayPaymentId: { type: String },
   },
- 
+
   shippingDetails: {
     trackingNumber: { type: String },
     courierPartner: { type: String },
