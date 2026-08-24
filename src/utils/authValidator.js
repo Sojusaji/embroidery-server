@@ -302,3 +302,149 @@ export const updateProductSchema = joi.object({
       'object.min': 'At least one field must be provided to update the product',
     })
 });
+
+
+
+export const cartSchema = joi.object({
+  body: joi
+    .object({
+      orderType: joi
+        .string()
+        .valid('PRODUCT_PURCHASE', 'CUSTOM_STITCHING')
+        .required()
+        .messages({
+          'any.only': 'Order type must be either PRODUCT_PURCHASE or CUSTOM_STITCHING.',
+          'any.required': 'Order type is required.',
+        }),
+
+      items: joi
+        .array()
+        .items(
+          joi
+            .object({
+              productId: joi
+                .string()
+                .trim()
+                .custom(objectIdValidator)
+                .required()
+                .messages({
+                  'string.base': 'Product ID must be text.',
+                  'string.pattern.base': 'Invalid Product ID format.',
+                  'any.required': 'Product ID is required.',
+                }),
+
+              quantity: joi
+                .number()
+                .integer()
+                .min(1)
+                .max(99)
+                .required()
+                .messages({
+                  'number.base': 'Quantity must be a number.',
+                  'number.integer': 'Quantity must be an integer.',
+                  'number.min': 'Quantity must be at least 1.',
+                  'number.max': 'Quantity cannot exceed 99 units.',
+                  'any.required': 'Quantity is required.',
+                }),
+
+              variantId: joi
+                .string()
+                .trim()
+                .custom(objectIdValidator)
+                .empty('')
+                .optional()
+                .messages({
+                  'string.pattern.base': 'Invalid Variant ID format.',
+                }),
+            })
+            .unknown(false)
+        )
+        .unique('productId')
+        .min(1)
+        .required()
+        .messages({
+          'array.base': 'Items must be an array.',
+          'array.min': 'Cart must contain at least one item.',
+          'array.unique': 'Duplicate products found in item list.',
+          'any.required': 'Cart items are required.',
+        }),
+
+      paymentMethod: joi
+        .string()
+        .trim()
+        .lowercase()
+        .valid('razorpay', 'cod')
+        .required()
+        .messages({
+          'string.base': 'Payment method must be text.',
+          'any.only': 'Payment method must be either "razorpay" or "cod".',
+          'any.required': 'Payment method is required.',
+        }),
+
+      deliveryAddress: joi
+        .object({
+          fullName: joi.string().trim().required().messages({
+            'any.required': 'Full name is required for delivery.',
+          }),
+          phone: joi.string().trim().required().messages({
+            'any.required': 'Phone number is required for delivery agents.',
+          }),
+          addressLine: joi.string().trim().required().messages({
+            'any.required': 'Address line is required.',
+          }),
+          city: joi.string().trim().required().messages({
+            'any.required': 'City is required.',
+          }),
+          postalCode: joi.string().trim().required().messages({
+            'any.required': 'Postal code is required.',
+          }),
+          state: joi.string().trim().required().messages({
+            'any.required': 'State is required.',
+          }),
+          country: joi.string().trim().required().messages({
+            'any.required': 'Country is required.',
+          }),
+        })
+        .required()
+        .messages({
+          'any.required': 'Delivery address is required.',
+        }),
+
+     
+      stitchingDetails: joi
+        .object({
+          fabricType: joi.string().trim().optional(),
+          measurements: joi.object({
+            chest: joi.number().positive().optional(),
+            waist: joi.number().positive().optional(),
+            hips: joi.number().positive().optional(),
+            length: joi.number().positive().optional(),
+            shoulder: joi.number().positive().optional(),
+          }).optional(),
+          specialInstructions: joi.string().trim().max(500).optional(),
+        })
+        .optional(),
+
+      expectedTotal: joi
+        .number()
+        .positive()
+        .precision(2)
+        .optional(),
+
+      couponCode: joi
+        .string()
+        .trim()
+        .uppercase()
+        .empty('')
+        .optional(),
+
+      notes: joi
+        .string()
+        .trim()
+        .max(500)
+        .empty('')
+        .optional(),
+    })
+    .unknown(false)
+    .required(),
+});
