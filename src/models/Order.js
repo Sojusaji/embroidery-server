@@ -1,13 +1,10 @@
-import { Schema, model } from 'mongoose';
+import mongoose, { Schema, model } from 'mongoose';
 
 const orderSchema = new Schema({
-  customerName: {
-    type: String,
-    required: true,
-  },
-  email: {
-    type: String,
-    required: true,
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
   },
   orderType: {
     type: String,
@@ -16,15 +13,34 @@ const orderSchema = new Schema({
   },
   items: [
     {
-      product: {
+      productId: {
         type: Schema.Types.ObjectId,
         ref: 'Product',
+        required: true,
       },
+      // 📸 Snapshots: Saved permanently so future product edits don't break order history
+      name: { type: String, required: true },
+      price: { type: Number, required: true },
+      image: { type: String },
       quantity: {
         type: Number,
+        required: true,
+        min: 1
+      },
+      lineTotal: {
+        type: Number,
+        required: true
       }
     }
   ],
+  discountAmount: {
+    type: Number,
+    default: 0
+  },
+  totalAmount: {
+    type: Number,
+    required: true,
+  },
   stitchingDetails: {
     fabricType: String,
     measurements: {
@@ -36,14 +52,41 @@ const orderSchema = new Schema({
     },
     specialInstructions: String,
   },
-  status: {
+  paymentMethod: {
     type: String,
-    enum: ['PENDING', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELled'],
-    default: 'PENDING',
+    enum: ['razorpay', 'cod'],
+    required: true
   },
-  totalAmount: {
-    type: Number,
+  deliveryAddress: {
+    fullName: { type: String, required: true },
+    phone: { type: String, required: true }, // Added: Crucial for delivery agents
+    addressLine: { type: String, required: true },
+    city: { type: String, required: true },
+    postalCode: { type: String, required: true },
+    state: { type: String, required: true },
+    country: { type: String, required: true }
+  },
+  orderStatus: {
+    type: String,
+    enum: ['pending', 'processing', 'shipped', 'delivered', 'cancelled'],
+    default: 'pending',
+  },
+  paymentStatus: {
+    type: String,
+    enum: ['pending', 'completed', 'failed', 'cancelled'],
+    default: 'pending'
+  },
+  paymentDetails: {
+    razorpayOrderId: { type: String },
+    razorpayPaymentId: { type: String },
+  },
+  // 📦 Added: Essential for shipping tracking
+  shippingDetails: {
+    trackingNumber: { type: String },
+    courierPartner: { type: String },
+    shippedAt: { type: Date }
   }
+
 }, { timestamps: true });
 
 const orderModel = model('Order', orderSchema);
