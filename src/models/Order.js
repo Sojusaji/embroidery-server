@@ -18,7 +18,6 @@ const orderSchema = new Schema({
         ref: 'Product',
         required: true,
       },
-      // 📸 Snapshots: Saved permanently so future product edits don't break order history
       name: { type: String, required: true },
       price: { type: Number, required: true },
       image: { type: String },
@@ -59,7 +58,7 @@ const orderSchema = new Schema({
   },
   deliveryAddress: {
     fullName: { type: String, required: true },
-    phone: { type: String, required: true }, // Added: Crucial for delivery agents
+    phone: { type: String, required: true }, 
     addressLine: { type: String, required: true },
     city: { type: String, required: true },
     postalCode: { type: String, required: true },
@@ -80,7 +79,7 @@ const orderSchema = new Schema({
     razorpayOrderId: { type: String },
     razorpayPaymentId: { type: String },
   },
-  // 📦 Added: Essential for shipping tracking
+ 
   shippingDetails: {
     trackingNumber: { type: String },
     courierPartner: { type: String },
