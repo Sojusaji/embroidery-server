@@ -7,6 +7,7 @@ import cookieParser from 'cookie-parser';
 import connectDB from './src/config/db.js'
 
 import  userAuthRoutes from "./src/routes/authRoutes.js";
+import { razorpayWebhookController } from "./src/controllers/payments/razorpayWebhookController.js";
 // import adminAuthRoutes from './src/routes/adminAuthRoutes.js';
 import adminRoutes from './src/routes/adminRoutes.js'
 import productRoutes from './src/routes/productRoutes.js';
@@ -22,6 +23,12 @@ app.use(cors({
   origin: process.env.CLIENT_URL || 'http://localhost:5173',
   credentials: true
 }));
+
+app.post(
+  '/api/v1/payments/webhook',
+  express.raw({ type: 'application/json' }),
+  razorpayWebhookController
+);
 
 app.use(express.json({ limit: '10kb' })); 
 app.use(express.urlencoded({ extended: true, limit: '10kb' }));

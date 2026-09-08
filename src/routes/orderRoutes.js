@@ -1,11 +1,12 @@
 import { Router } from 'express';
 const router = Router();
-import order from '../controllers/orders/orderController.js';
-const { createOrder, getOrders } = order;
-import {authMiddleware} from '../middlewares/authMiddleware.js';
+import { createOrder, getOrders } from '../controllers/orders/orderController.js';
+import { authMiddleware } from '../middlewares/authMiddleware.js';
+import { validate } from '../middlewares/validate.js'
+import { orderSchema } from "../utils/authValidator.js";
 
 router.route('/')
-  .post(createOrder)
-  .get(authMiddleware, getOrders);
+  .post(authMiddleware, validate(orderSchema), createOrder)
+  .get(getOrders);
 
 export default router;

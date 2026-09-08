@@ -10,11 +10,11 @@ const orderSchema = new Schema({
     type: String,
     required: true
   },
-  orderType: {
-    type: String,
-    enum: ['PRODUCT_PURCHASE', 'CUSTOM_STITCHING'],
-    required: true,
-  },
+  // orderType: {
+  //   type: String,
+  //   enum: ['PRODUCT_PURCHASE', 'CUSTOM_STITCHING'],
+  //   required: true,
+  // },
   items: [
     {
       productId: {
@@ -40,21 +40,25 @@ const orderSchema = new Schema({
     type: Number,
     default: 0
   },
+  couponCode: {
+    type: String,
+    default: null
+  },
   totalAmount: {
     type: Number,
     required: true,
   },
-  stitchingDetails: {
-    fabricType: String,
-    measurements: {
-      chest: Number,
-      waist: Number,
-      hips: Number,
-      length: Number,
-      shoulder: Number,
-    },
-    specialInstructions: String,
-  },
+  // stitchingDetails: {
+  //   fabricType: String,
+  //   measurements: {
+  //     chest: Number,
+  //     waist: Number,
+  //     hips: Number,
+  //     length: Number,
+  //     shoulder: Number,
+  //   },
+  //   specialInstructions: String,
+  // },
   paymentMethod: {
     type: String,
     enum: ['razorpay', 'cod'],
@@ -78,6 +82,12 @@ const orderSchema = new Schema({
     type: String,
     enum: ['pending', 'completed', 'failed', 'cancelled'],
     default: 'pending'
+  },
+  idempotencyKey: {
+    type: String,
+    unique: true,
+    sparse: true, 
+    index: true,
   },
   paymentDetails: {
     razorpayOrderId: { type: String },

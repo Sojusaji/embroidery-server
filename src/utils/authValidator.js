@@ -238,6 +238,7 @@ const objectIdValidator = (value, helpers) => {
 };
 
 
+
 export const getOneProductSchema = joi.object({
   params: joi.object({
     productId: joi.string().custom(objectIdValidator).required().messages({
@@ -303,20 +304,22 @@ export const updateProductSchema = joi.object({
     })
 });
 
+const uniquenessValidator = (items, helpers) => {
+  const seen = new Set();
+  for (let item of items) {
+    const compositeKey = `${item.productId}_${item.variantId || 'none'}`;
+    if (seen.has(compositeKey)) {
+      return helpers.error('array.unique');
+    }
+    seen.add(compositeKey);
+  }
+  return items
 
+}
 
-export const cartSchema = joi.object({
+export const orderSchema = joi.object({
   body: joi
     .object({
-      orderType: joi
-        .string()
-        .valid('PRODUCT_PURCHASE', 'CUSTOM_STITCHING')
-        .required()
-        .messages({
-          'any.only': 'Order type must be either PRODUCT_PURCHASE or CUSTOM_STITCHING.',
-          'any.required': 'Order type is required.',
-        }),
-
       items: joi
         .array()
         .items(
@@ -354,12 +357,13 @@ export const cartSchema = joi.object({
                 .empty('')
                 .optional()
                 .messages({
+                  'string.base': 'VariantId must be string ',
                   'string.pattern.base': 'Invalid Variant ID format.',
-                }),
+                })
             })
             .unknown(false)
         )
-        .unique('productId')
+        .custom(uniquenessValidator)
         .min(1)
         .required()
         .messages({
@@ -368,7 +372,15 @@ export const cartSchema = joi.object({
           'array.unique': 'Duplicate products found in item list.',
           'any.required': 'Cart items are required.',
         }),
-
+      idempotencyKey: joi
+        .string()
+        .guid({ version: ['uuidv4'] })
+        .required()
+        .messages({
+          'string.base': 'Idempotency key must be text.',
+          'string.guid': 'Idempotency key must be a valid UUIDv4.',
+          'any.required': 'Idempotency key is missing. Please retry checkout.',
+        }),
       paymentMethod: joi
         .string()
         .trim()
@@ -383,25 +395,25 @@ export const cartSchema = joi.object({
 
       deliveryAddress: joi
         .object({
-          fullName: joi.string().trim().required().messages({
+          fullName: joi.string().trim().empty('').required().messages({
             'any.required': 'Full name is required for delivery.',
           }),
-          phone: joi.string().trim().required().messages({
+          phone: joi.string().trim().empty('').required().messages({
             'any.required': 'Phone number is required for delivery agents.',
           }),
-          addressLine: joi.string().trim().required().messages({
+          addressLine: joi.string().trim().empty('').required().messages({
             'any.required': 'Address line is required.',
           }),
-          city: joi.string().trim().required().messages({
+          city: joi.string().trim().empty('').required().messages({
             'any.required': 'City is required.',
           }),
-          postalCode: joi.string().trim().required().messages({
+          postalCode: joi.string().trim().empty('').required().messages({
             'any.required': 'Postal code is required.',
           }),
-          state: joi.string().trim().required().messages({
+          state: joi.string().trim().empty('').required().messages({
             'any.required': 'State is required.',
           }),
-          country: joi.string().trim().required().messages({
+          country: joi.string().trim().empty('').required().messages({
             'any.required': 'Country is required.',
           }),
         })
@@ -410,41 +422,19 @@ export const cartSchema = joi.object({
           'any.required': 'Delivery address is required.',
         }),
 
-     
-      stitchingDetails: joi
-        .object({
-          fabricType: joi.string().trim().optional(),
-          measurements: joi.object({
-            chest: joi.number().positive().optional(),
-            waist: joi.number().positive().optional(),
-            hips: joi.number().positive().optional(),
-            length: joi.number().positive().optional(),
-            shoulder: joi.number().positive().optional(),
-          }).optional(),
-          specialInstructions: joi.string().trim().max(500).optional(),
-        })
-        .optional(),
-
-      expectedTotal: joi
-        .number()
-        .positive()
-        .precision(2)
-        .optional(),
-
       couponCode: joi
         .string()
         .trim()
         .uppercase()
         .empty('')
-        .optional(),
-
-      notes: joi
-        .string()
-        .trim()
-        .max(500)
-        .empty('')
-        .optional(),
+        .optional()
+        .messages({
+          'string.base': 'CouponCode must be string '
+        })
     })
     .unknown(false)
-    .required(),
+    .required()
+    .messages({
+      'any.required': 'Please ensure all mandatory datas are entered'
+    })
 });

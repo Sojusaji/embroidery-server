@@ -1,4 +1,4 @@
-import { connect } from 'mongoose';
+import mongoose, { connect } from 'mongoose';
 
 const connectDB = async () => {
   try {
@@ -9,5 +9,13 @@ const connectDB = async () => {
     process.exit(1);
   }
 };
+
+mongoose.connection.on('connected', () => {
+  console.log('Mongoose connected to DB Cluster');
+})
+
+mongoose.connection.on('error', (err) => {
+  console.log(`mongoose connection error:${err}`);
+})
 
 export default connectDB;

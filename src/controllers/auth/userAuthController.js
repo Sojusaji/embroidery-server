@@ -24,7 +24,7 @@ const createAndSendOtp = async (email) => {
         expiresAt: dynamicExpiryTime
     });
 
-    sendVerificationEmail(email, otp).catch(err => {
+    sendVerificationEmail({email, otp}).catch(err => {
         console.error('Background email delivery failed:', err)
     });
 };

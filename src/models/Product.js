@@ -60,11 +60,6 @@ const productSchema = new Schema({
     default: 0,
     min: 0
   },
-  inStock: {
-    type: Boolean,
-    default: true,
-    index: true,
-  },
   status: {
     type: String,
     required: true,
@@ -108,6 +103,9 @@ const productSchema = new Schema({
 }
 
 );
+productSchema.virtual('inStock').get(function () {
+  return this.totalStock > 0
+})
 productSchema.index({ name: 'text', description: 'text', tags: 'text' });
 productSchema.index({ category: 1, status: 1, isDeleted: 1, _id: -1, createdAt: -1 });
 
