@@ -35,5 +35,5 @@ const otpSchema = new Schema({
 
 otpSchema.index({expiresAt:1},{expireAfterSeconds:0});
 
-const otpModel = model('Otp', otpSchema);
-export default otpModel;
+const Otp = model('Otp', otpSchema);
+export default Otp;

@@ -109,5 +109,5 @@ productSchema.virtual('inStock').get(function () {
 productSchema.index({ name: 'text', description: 'text', tags: 'text' });
 productSchema.index({ category: 1, status: 1, isDeleted: 1, _id: -1, createdAt: -1 });
 
-const productModel = model('Products', productSchema);
-export default productModel;
+const Product = model('Product', productSchema);
+export default Product;

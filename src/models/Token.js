@@ -18,5 +18,5 @@ const tokenSchema = new Schema({
 tokenSchema.index({ userId: 1 });
 tokenSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
-const tokenModel = model('Token', tokenSchema);
-export default tokenModel;
+const Token = model('Token', tokenSchema);
+export default Token;

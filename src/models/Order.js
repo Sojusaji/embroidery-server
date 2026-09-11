@@ -102,5 +102,5 @@ const orderSchema = new Schema({
 
 }, { timestamps: true });
 
-const orderModel = model('Order', orderSchema);
-export default orderModel;
+const Order = model('Order', orderSchema);
+export default Order;
