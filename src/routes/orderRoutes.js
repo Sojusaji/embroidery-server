@@ -7,6 +7,6 @@ import { orderSchema } from "../utils/authValidator.js";
 
 router.route('/')
   .post(authMiddleware, validate(orderSchema), createOrder)
-  .get(getOrders);
+  .get(authMiddleware,getOrders);
 
 export default router;

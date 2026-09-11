@@ -12,6 +12,7 @@ import { razorpayWebhookController } from "./src/controllers/payments/razorpayWe
 import adminRoutes from './src/routes/adminRoutes.js'
 import productRoutes from './src/routes/productRoutes.js';
 import orderRoutes from './src/routes/orderRoutes.js';
+import cartRoutes  from "./src/routes/cartRoutes.js";
 import globalErrorHandler from './src/middlewares/errorMiddleware.js';
 import { createSuperAdmin } from './src/scripts/seedAdmin.js';
 import { initCleanupCron } from './src/tasks/cleanupCron.js';
@@ -48,6 +49,7 @@ app.use('/api/v1/auth/users', userAuthRoutes);
 app.use('/api/v1/admins', adminRoutes);     
 app.use('/api/v1/products', productRoutes); 
 app.use('/api/v1/orders', orderRoutes);
+app.use('/api/v1/cart',cartRoutes);
 
 
 app.get('/api/health', (req, res) => {

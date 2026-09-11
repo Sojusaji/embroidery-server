@@ -4,6 +4,7 @@ import productModel from '../../models/Product.js';
 import Order from '../../models/Order.js';
 import AppError from '../../utils/appError.js';
 import { razorpay } from '../../config/razorpayConfig.js'
+import orderModel from '../../models/Order.js';
 // Optional: Import your coupon model if applicable
 // import Coupon from '../../models/Coupon';
 
@@ -210,10 +211,18 @@ export const createOrder = async (req, res, next) => {
 // @access  Private/Admin
 export const getOrders = async (req, res) => {
   try {
-    const orders = await orderModel.find({}).populate('items.product', 'name price image');
-    res.json(orders);
+    const orders = await orderModel
+      .find({}, 'items totalAmount userId orderStatus paymentStatus createdAt')
+      .sort({ createdAt: -1 }); 
+    if (!orders) {
+      return next(AppError('Sorry, We can not fetch orders. try again later', 400));
+    }
+    return res.status(200).json({
+      status: true,
+      orders
+    });
   } catch (error) {
-    res.status(500).json({ message: 'Failed to fetch orders', error: error.message });
+    next(error);
   }
 };
 
