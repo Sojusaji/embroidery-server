@@ -1,5 +1,5 @@
 import joi from 'joi';
-import mongoose from 'mongoose';
+import mongoose, { isValidObjectId } from 'mongoose';
 
 export const userLoginSchema = joi.object({
   body: joi.object({
@@ -301,6 +301,56 @@ export const updateProductSchema = joi.object({
     .min(1)
     .messages({
       'object.min': 'At least one field must be provided to update the product',
+    })
+});
+
+
+
+export const cartSchema = joi.object({
+  body: joi.object({
+    items: joi.array().items(
+      joi.object({
+        productId: joi.string()
+          .trim()
+          .custom(objectIdValidator)
+          .required()
+          .messages({
+            'string.base': 'Product ID must be a string format',
+            'any.required': 'Product ID is mandatory',
+          }),
+
+        variantId: joi.string()
+          .trim()
+          .optional()
+          .messages({
+            'string.base': 'Variant ID must be a string format',
+          }),
+
+        quantity: joi.number()
+          .required()
+          .integer()
+          .min(1)
+          .max(99)
+          .messages({
+            'number.base': 'Quantity must be a number',
+            'any.required': 'Quantity is mandatory',
+            'number.min': 'Quantity must be at least 1',
+            'number.max': 'Quantity cannot exceed 99',
+          })
+      }).unknown(false)
+    ).required()
+    .min(1)
+    .messages({
+      'array.base':'Items must be an array',
+      'any.required': 'Items are mandatory',
+      'array.min':'Cart must contain at least one item'
+    })
+  })
+    .unknown(false)
+    .required()
+    .messages({
+      'object.unknown': 'Some provided fields are not allowed',
+      'any.required': 'Request body is required'
     })
 });
 
