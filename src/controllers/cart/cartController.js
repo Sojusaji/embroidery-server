@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 import Cart from "../../models/Cart.js";
-import AppError from "../../utils/appError.js";
+
 
 export const addToCart = async (req, res, next) => {
     const { items } = req.body;
@@ -46,7 +46,14 @@ export const addToCart = async (req, res, next) => {
 export const fetchCartData = async (req, res, next) => {
     const id = req.user.id;
     try {
-        const cartItems = await Cart.aggregate([
+        const haveCart = await Cart.findOne({ userId: id });
+        if (!haveCart) {
+            return res.status(400).json({
+                status: false,
+                message: 'Cart not found'
+            })
+        }
+        const aggregateResult = await Cart.aggregate([
             {
                 $match: {
                     userId: new mongoose.Types.ObjectId(id),
@@ -94,13 +101,54 @@ export const fetchCartData = async (req, res, next) => {
                         ]
                     }
                 }
+            },
+            {
+                $facet: {
+                    cartItems: [
+                        {
+                            $match: {}
+                        }
+                    ],
+                    totalQuantity: [
+                        {
+                            $group: {
+                                _id: null,
+                                total: {
+                                    $sum: '$quantity'
+                                }
+                            }
+                        }
+                    ],
+                    grandTotal: [
+                        {
+                            $group: {
+                                _id: null,
+                                totalAmount: {
+                                    $sum: {
+                                        $multiply: [
+                                            '$price', '$quantity'
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    ]
+                }
             }
         ])
+
+        const facetData = aggregateResult[0] || { cartItems: [], totalQuantity: [], grandTotal: [] };
+        const cartItems = facetData.cartItems;
+        const totalQuantity = facetData.totalQuantity[0]?.total ?? 0;
+        const grandTotal = facetData.grandTotal[0]?.totalAmount ?? 0;
 
         return res.status(200).json({
             success: true,
             count: cartItems.length,
+            totalQuantity,
+            grandTotal,
             cartItems
+
         });
     } catch (error) {
         next(error);
