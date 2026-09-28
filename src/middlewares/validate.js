@@ -11,6 +11,8 @@ export const validate = (schema) => {
                 query: req.query,
             };
 
+            console.log('dataToValidate:',dataToValidate);
+
             const value = await schema.validateAsync(dataToValidate,
                 {
                     abortEarly: false,

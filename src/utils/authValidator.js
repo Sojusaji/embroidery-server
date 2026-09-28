@@ -339,12 +339,12 @@ export const cartSchema = joi.object({
           })
       }).unknown(false)
     ).required()
-    .min(1)
-    .messages({
-      'array.base':'Items must be an array',
-      'any.required': 'Items are mandatory',
-      'array.min':'Cart must contain at least one item'
-    })
+      .min(1)
+      .messages({
+        'array.base': 'Items must be an array',
+        'any.required': 'Items are mandatory',
+        'array.min': 'Cart must contain at least one item'
+      })
   })
     .unknown(false)
     .required()
@@ -488,3 +488,67 @@ export const orderSchema = joi.object({
       'any.required': 'Please ensure all mandatory datas are entered'
     })
 });
+
+const productIdSchema = joi.string()
+  .trim()
+  .custom(objectIdValidator)
+  .required()
+  .messages({
+    'string.base': 'Product ID must be text.',
+    'any.required': 'Product ID is required.',
+  });
+
+const baseObjectMessages = {
+  'any.required': 'Please ensure all mandatory data is entered.',
+};
+
+export const addToCartSchema = joi.object({
+  body: joi.object({
+    productId: productIdSchema,
+    quantity: joi.number()
+      .integer()
+      .min(1)
+      .max(99)
+      .required()
+      .messages({
+        'number.base': 'Quantity must be a number.',
+        'number.integer': 'Quantity must be an integer.',
+        'number.min': 'Quantity must be at least 1.',
+        'number.max': 'Quantity cannot exceed 99 units.',
+        'any.required': 'Quantity is required.',
+      }),
+  })
+    .unknown(false)
+    .required()
+    .messages(baseObjectMessages),
+});
+
+export const updateCartQuantitySchema = joi.object({
+  body: joi.object({
+    productId: productIdSchema,
+    change: joi.number()
+      .integer()
+      .min(-1)
+      .max(1)
+      .required()
+      .messages({
+        'number.base': 'Quantity must be a number.',
+        'number.integer': 'Quantity must be an integer.',
+        'number.min': 'Quantity adjustment cannot be less than -1.',
+        'number.max': 'Quantity adjustment cannot exceed 1.',
+        'any.required': 'Quantity is required.',
+      }),
+  })
+    .unknown(false)
+    .required()
+    .messages(baseObjectMessages),
+});
+
+
+export const removeCartItemSchema = joi.object({
+  params: joi.object({
+    productId: productIdSchema
+  }).unknown(false)
+    .required()
+    .messages(baseObjectMessages)
+})
