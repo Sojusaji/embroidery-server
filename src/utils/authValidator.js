@@ -504,20 +504,26 @@ const baseObjectMessages = {
 
 export const addToCartSchema = joi.object({
   body: joi.object({
-    productId: productIdSchema,
-    quantity: joi.number()
-      .integer()
-      .min(1)
-      .max(99)
-      .required()
-      .messages({
-        'number.base': 'Quantity must be a number.',
-        'number.integer': 'Quantity must be an integer.',
-        'number.min': 'Quantity must be at least 1.',
-        'number.max': 'Quantity cannot exceed 99 units.',
-        'any.required': 'Quantity is required.',
-      }),
+    items: joi.array()
+      .items(
+        joi.object({
+          productId: productIdSchema,
+          quantity: joi.number()
+            .integer()
+            .min(1)
+            .max(99)
+            .required()
+            .messages({
+              'number.base': 'Quantity must be a number.',
+              'number.integer': 'Quantity must be an integer.',
+              'number.min': 'Quantity must be at least 1.',
+              'number.max': 'Quantity cannot exceed 99 units.',
+              'any.required': 'Quantity is required.',
+            }),
+        })
+      )
   })
+
     .unknown(false)
     .required()
     .messages(baseObjectMessages),
