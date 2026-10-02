@@ -19,6 +19,7 @@ const pipeline = async ({ matchedQuery, limit }) => {
         id: '$_id',
         name: 1,
         price: 1,
+        comparePrice:1,
         category: 1,
         createdAt: 1,
         image: 1
