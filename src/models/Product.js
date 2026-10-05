@@ -77,6 +77,19 @@ const productSchema = new Schema({
     type: Boolean,
     default: false
   },
+  rating: {
+    type: Number,
+    required: true,
+    default: 0,
+    min: 0,
+    max: 5,
+  },
+  numReviews: {
+    type: Number,
+    required: true,
+    default: 0,
+    min: 0,
+  },
   isDeleted: {
     type: Boolean,
     default: false,

@@ -323,7 +323,7 @@ export const cartSchema = joi.object({
           .trim()
           .optional()
           .messages({
-            'string.base': 'Variant ID must be a string format',
+            'string.base': 'Variant ID must be text.',
           }),
 
         quantity: joi.number()
@@ -349,8 +349,8 @@ export const cartSchema = joi.object({
     .unknown(false)
     .required()
     .messages({
-      'object.unknown': 'Some provided fields are not allowed',
-      'any.required': 'Request body is required'
+      'object.unknown': 'Some of the submitted fields are not allowed.',
+      'any.required': 'Please fill in all required fields correctly.'
     })
 });
 
@@ -407,8 +407,8 @@ export const orderSchema = joi.object({
                 .empty('')
                 .optional()
                 .messages({
-                  'string.base': 'VariantId must be string ',
-                  'string.pattern.base': 'Invalid Variant ID format.',
+                  'string.base': 'Variant ID must be string ',
+                  'string.pattern.base': 'Invalid variant ID format.',
                 })
             })
             .unknown(false)
@@ -485,7 +485,7 @@ export const orderSchema = joi.object({
     .unknown(false)
     .required()
     .messages({
-      'any.required': 'Please ensure all mandatory datas are entered'
+      'any.required': 'Please fill in all required fields correctly.'
     })
 });
 
@@ -499,7 +499,8 @@ const productIdSchema = joi.string()
   });
 
 const baseObjectMessages = {
-  'any.required': 'Please ensure all mandatory data is entered.',
+  'any.required': 'Please fill out all required information.',
+  'object.unknown': 'Some of the submitted fields are not allowed.'
 };
 
 export const addToCartSchema = joi.object({
@@ -558,3 +559,57 @@ export const removeCartItemSchema = joi.object({
     .required()
     .messages(baseObjectMessages)
 })
+
+
+export const getProductReviewSchema = joi.object({
+  params: joi.object({
+    id: productIdSchema
+  }),
+  query: joi.object({
+    page: joi.number()
+      .integer()
+      .min(1)
+      .default(1)
+      .messages({
+        'number.base': 'Page must be a number.',
+        'number.integer': 'Page must be an integer.',
+        'number.min': 'Page must be at least 1.',
+      }),
+
+    limit: joi.number()
+      .integer()
+      .min(1)
+      .max(100)
+      .default(10)
+      .messages({
+        'number.base': 'Limit must be a number.',
+        'number.integer': 'Limit must be an integer.',
+        'number.min': 'Limit must be at least 1.',
+        'number.max': 'Limit cannot exceed 100.',
+      })
+  }).optional()
+})
+
+
+export const createReviewSchema = joi.object({
+
+  params: joi.object({
+    id:productIdSchema
+  }).required(),
+
+  body: joi.object({
+    rating: joi.number().min(1).max(5).required().messages({
+      'number.base': 'Please provide a valid rating between 1 and 5 stars',
+      'number.min': 'Please provide a valid rating between 1 and 5 stars',
+      'number.max': 'Please provide a valid rating between 1 and 5 stars',
+      'any.required': 'Please provide a valid rating between 1 and 5 stars'
+    }),
+
+    comment: joi.string().trim().min(1).max(1000).required().messages({
+      'string.empty': 'Please provide a review comment',
+      'string.max': 'Comment cannot exceed 1000 characters',
+      'any.required': 'Please provide a review comment'
+    })
+  }).required()
+
+});

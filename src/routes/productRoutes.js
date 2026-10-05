@@ -12,12 +12,28 @@ import {
 
 import { upload } from '../middlewares/upload.js';
 import { authMiddleware, restrictTo } from '../middlewares/authMiddleware.js';
-import { createProductSchema, categorySchema, updateProductSchema, getOneProductSchema } from "../../src/utils/authValidator.js";
+import {
+  createProductSchema,
+  categorySchema,
+  updateProductSchema,
+  getOneProductSchema,
+  getProductReviewSchema,
+  createReviewSchema,
+} from "../../src/utils/authValidator.js";
 import { validate } from "../middlewares/validate.js";
 
 
+import {
+  getProductReviews,
+  createProductReview
+} from '../controllers/products/reviewController.js';
+
 router.get('/featured', getFeaturedProducts);
 router.get('/latest', getLatestProducts);
+
+router.route('/:id/reviews')
+  .get(validate(getProductReviewSchema), getProductReviews)
+  .post(authMiddleware,validate(createReviewSchema), createProductReview);
 
 router.get('/product-trash',
   authMiddleware,
