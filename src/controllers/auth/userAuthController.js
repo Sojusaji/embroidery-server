@@ -13,7 +13,7 @@ import { mailGoogleClient } from "../../scripts/generateMailerAuthUrl.js"
 const createAndSendOtp = async (email) => {
     console.log('createAndSendOtp function recieved email:', email);
     const otp = generateOtp();
-    
+
     console.log("otp created is :", otp);
     const dynamicExpiryTime = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
@@ -24,7 +24,7 @@ const createAndSendOtp = async (email) => {
         expiresAt: dynamicExpiryTime
     });
 
-    sendVerificationEmail({email, otp}).catch(err => {
+    sendVerificationEmail({ email, otp }).catch(err => {
         console.error('Background email delivery failed:', err)
     });
 };
@@ -240,6 +240,8 @@ export const userLogin = async (req, res, next) => {
 export const verifyPin = async (req, res, next) => {
     const { pin } = req.body;
     console.log("pin recieved from client:", pin);
+    const MAX_ATTEMPTS = 5;
+    const LOCKOUT_DURATION_HOURS = 24;
 
     const tempToken = req.cookies.temp_admin_session;
 
@@ -258,9 +260,35 @@ export const verifyPin = async (req, res, next) => {
         if (!user) return next(new AppError('Admin user not found.', 404));
         const userEmail = user.email;
 
-        const isPinCorrect = compare(pin, process.env.SUPER_ADMIN_PIN_HASH);
+
+        if (user.lockoutUntil && user.lockoutUntil > new Date()) {
+            const remainingHours = Math.ceil((user.lockoutUntil - Date.now()) / 3600000);
+            const timeUnit = remainingHours === 1 ? 'hour' : 'hours';
+
+            return res.status(429).json({
+                message: `Too many incorrect attempts. Account is locked. Try again in ${remainingHours} ${timeUnit}.`
+            });
+        }
+
+        const isPinCorrect = await compare(pin, process.env.SUPER_ADMIN_PIN_HASH);
+
+
+        console.log('isPinCorrect:', isPinCorrect);
         if (!isPinCorrect) {
-            return next(new AppError('Incorrect Admin PIN.', 401))
+            user.failedLoginAttempts = (user.failedLoginAttempts || 0) + 1;
+            const attemptsLeft = MAX_ATTEMPTS - user.failedLoginAttempts;
+            if (user.failedLoginAttempts >= MAX_ATTEMPTS) {
+                user.lockoutUntil = new Date(Date.now() + LOCKOUT_DURATION_HOURS * 60 * 60 * 1000);
+                await user.save();
+                return res.status(429).json({
+                    message: "Maximum incorrect PIN attempts reached. Your account has been locked for 24 hours for security."
+                });
+            }
+
+            await user.save();
+            return res.status(400).json({
+                message: `Incorrect PIN. Warning: ${attemptsLeft} attempt(s) remaining before a 24-hour lockout.`
+            });
         }
 
         res.clearCookie('temp_admin_session');
@@ -277,7 +305,9 @@ export const verifyPin = async (req, res, next) => {
             }
             user = verifiedUser;
         }
-
+        user.lockoutUntil = null;
+        user.failedLoginAttempts = 0;
+        await user.save()
         const tokenPayload = {
             userId: user._id,
             name: user.username,

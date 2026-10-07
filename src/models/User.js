@@ -29,7 +29,14 @@ const userSchema = new Schema({
     default: false,
     select: false
   },
-
+  failedLoginAttempts: {
+    type: Number,
+    default: 0
+  },
+  lockoutUntil: {
+    type: Date,
+    default: null
+  },
   role: {
     type: String,
     enum: ['admin', 'superAdmin', 'user'],
@@ -37,22 +44,22 @@ const userSchema = new Schema({
   }
 }, {
   timestamps: true,
-  toJSON:{
-    virtuals:true,
-    transform:(doc,ret)=>{
-      ret.id=ret._id;
+  toJSON: {
+    virtuals: true,
+    transform: (doc, ret) => {
+      ret.id = ret._id;
       delete ret._id;
       delete ret.__v;
       return ret;
     }
   },
-  toObject:{
-    virtuals:true
+  toObject: {
+    virtuals: true
   }
 
 });
 
-userSchema.index({username:'text'})
+userSchema.index({ username: 'text' })
 userSchema.index({ email: 1 });
 const User = model('User', userSchema);
 export default User;
