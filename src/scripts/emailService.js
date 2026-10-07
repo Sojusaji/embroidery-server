@@ -23,7 +23,8 @@ const createEmailLayout = (innerHtmlContent) => {
     </div>`;
 };
 
-export const sendVerificationEmail = async ({ targetEmail, otpCode }) => {
+export const sendVerificationEmail = async ({ email: targetEmail, otp: otpCode }) => {
+    console.log('targetEmail and OTP:', targetEmail, otpCode);
     try {
         const innerContent = `
             <p style="color: #3f3f46; font-size: 16px; line-height: 24px;">Hello,</p>
@@ -37,7 +38,7 @@ export const sendVerificationEmail = async ({ targetEmail, otpCode }) => {
             
             <p style="color: #71717a; font-size: 14px; line-height: 20px;">This authentication token is highly time-sensitive and remains valid for exactly <b>10 minutes</b>. If you did not request this code, please safely ignore this email.</p>
         `;
-
+        console.log('from email adddress:',process.env.GMAIL);
         const mailOptions = {
             from: `"Loom & Luster Studio Support" <${process.env.GMAIL}>`,
             to: targetEmail,

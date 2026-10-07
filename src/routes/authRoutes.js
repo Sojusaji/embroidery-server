@@ -34,7 +34,7 @@ router.post('/logout', userLogout);
 
 router.post('/refresh', refresh);
 
-// router.post('/google/callback', googleCallback)
+router.post('/google/callback', googleCallback)
 
 // THIS CALLBACK IS ONLY FOR GENERATING REFRESH TOKEN FOR SENDING MAIL
 router.get('/google/formail-callback',mailGoogleCallback);
