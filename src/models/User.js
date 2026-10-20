@@ -41,6 +41,11 @@ const userSchema = new Schema({
     type: String,
     enum: ['admin', 'superAdmin', 'user'],
     default: 'user'
+  },
+  status:{
+    type:String,
+    enum:['active','block'],
+    default:'active'
   }
 }, {
   timestamps: true,
