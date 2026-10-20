@@ -1,10 +1,10 @@
-import userModel from '../../models/User.js'
+import User from '../../models/User.js'
 import AppError from '../../utils/appError.js';
 import { hash } from "bcryptjs";
 
 export const getAdmins = async (req, res, next) => {
     try {
-        const admins = await userModel.find({ role: { $in: ['admin', 'superAdmin'] } }).select('-password');
+        const admins = await User.find({ role: { $in: ['admin', 'superAdmin'] } }).select('-password');
         res.status(200).json({
             status: 'success',
             data: admins
@@ -23,7 +23,7 @@ export const addAdmin = async (req, res, next) => {
         }
 
         const hashedPassword = await hash(password, 12);
-        const newAdmin = await userModel.create({
+        const newAdmin = await User.create({
             username,
             gmail,
             password: hashedPassword,
@@ -43,7 +43,7 @@ export const addAdmin = async (req, res, next) => {
 
 export const deleteAdmin = async (req, res, next) => {
     try {
-        const admin = await userModel.findById(req.params.id);
+        const admin = await User.findById(req.params.id);
         if (!admin) {
             return next(new AppError('Admin not found', 404));
         }
