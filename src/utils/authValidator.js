@@ -471,7 +471,34 @@ export const orderSchema = joi.object({
         .messages({
           'any.required': 'Delivery address is required.',
         }),
-
+      billingAddress:joi
+        .object({
+          fullName: joi.string().trim().empty('').required().messages({
+            'any.required': 'Full name is required for delivery.',
+          }),
+          phone: joi.string().trim().empty('').required().messages({
+            'any.required': 'Phone number is required for delivery agents.',
+          }),
+          addressLine: joi.string().trim().empty('').required().messages({
+            'any.required': 'Address line is required.',
+          }),
+          city: joi.string().trim().empty('').required().messages({
+            'any.required': 'City is required.',
+          }),
+          postalCode: joi.string().trim().empty('').required().messages({
+            'any.required': 'Postal code is required.',
+          }),
+          state: joi.string().trim().empty('').required().messages({
+            'any.required': 'State is required.',
+          }),
+          country: joi.string().trim().empty('').required().messages({
+            'any.required': 'Country is required.',
+          }),
+        })
+        .required()
+        .messages({
+          'any.required': 'Delivery address is required.',
+        }),
       couponCode: joi
         .string()
         .trim()
@@ -483,10 +510,7 @@ export const orderSchema = joi.object({
         })
     })
     .unknown(false)
-    .required()
-    .messages({
-      'any.required': 'Please fill in all required fields correctly.'
-    })
+    .optional()
 });
 
 const productIdSchema = joi.string()

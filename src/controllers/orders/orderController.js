@@ -35,7 +35,7 @@ export const createOrder = async (req, res, next) => {
 
   try {
 
-    const { items, paymentMethod, deliveryAddress, couponCode, idempotencyKey } = req.body;
+    const { items, paymentMethod, deliveryAddress, billingAddress, couponCode, idempotencyKey } = req.body;
 
     if (!items || !Array.isArray(items) || items.length === 0) {
       throw new AppError("No items provided in the order", 400);
@@ -114,6 +114,7 @@ export const createOrder = async (req, res, next) => {
             userId: userId,
             customerEmail,
             deliveryAddress,
+            billingAddress,
             items: enrichedItems,
             totalAmount: finalAmountInPaise / 100,
             paymentMethod,
@@ -213,7 +214,7 @@ export const getOrders = async (req, res) => {
   try {
     const orders = await orderModel
       .find({}, 'items totalAmount userId orderStatus paymentStatus createdAt')
-      .sort({ createdAt: -1 }); 
+      .sort({ createdAt: -1 });
     if (!orders) {
       return next(AppError('Sorry, We can not fetch orders. try again later', 400));
     }

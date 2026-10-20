@@ -73,6 +73,15 @@ const orderSchema = new Schema({
     state: { type: String, required: true },
     country: { type: String, required: true }
   },
+  billingAddress: {
+    fullName: { type: String, required: true },
+    phone: { type: String, required: true },
+    addressLine: { type: String, required: true },
+    city: { type: String, required: true },
+    postalCode: { type: String, required: true },
+    state: { type: String, required: true },
+    country: { type: String, required: true }
+  },
   orderStatus: {
     type: String,
     enum: ['pending', 'processing', 'shipped', 'delivered', 'cancelled'],
@@ -86,7 +95,7 @@ const orderSchema = new Schema({
   idempotencyKey: {
     type: String,
     unique: true,
-    sparse: true, 
+    sparse: true,
     index: true,
   },
   paymentDetails: {
