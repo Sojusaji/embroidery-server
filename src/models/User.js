@@ -42,10 +42,15 @@ const userSchema = new Schema({
     enum: ['admin', 'superAdmin', 'user'],
     default: 'user'
   },
-  status:{
-    type:String,
-    enum:['active','block'],
-    default:'active'
+  status: {
+    type: String,
+    enum: ['active', 'blocked'],
+    default: 'active'
+  },
+  isDeleted: {
+    type: Boolean,
+    default: false,
+    select: false
   }
 }, {
   timestamps: true,
