@@ -1,4 +1,5 @@
 import User from "../../models/User.js";
+import AppError from "../../utils/appError.js";
 
 export const getCustomersData = async (req, res, next) => {
     try {
@@ -36,7 +37,7 @@ export const getCustomersData = async (req, res, next) => {
                     joined: { $first: "$createdAt" },
                     status: { $first: "$status" },
                     shippingAddress: { $first: "$result.deliveryAddress" },
-                    billingAddress:{$first:"$result.billingAddress"},
+                    billingAddress: { $first: "$result.billingAddress" },
                     orderHistory: {
                         $push: {
                             id: "$result._id",
@@ -53,7 +54,7 @@ export const getCustomersData = async (req, res, next) => {
                     ordersCount: { $size: "$ordersCount" }
                 }
             },
-           
+
             {
                 $group: {
                     _id: null,
@@ -78,5 +79,50 @@ export const getCustomersData = async (req, res, next) => {
 
     } catch (error) {
         next(error)
+    }
+}
+
+
+export const blockCustomer = async (req, res, next) => {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    try {
+        const customer = await User.findByIdAndUpdate(id,
+            { status },
+            { new: true, runValidators: true });
+        if (!customer) {
+            return next(new AppError("User not found", 404));
+        }
+
+        return res.status(200).json({
+            status: true,
+            message: 'Status updated successfully',
+            data: customer
+        })
+    } catch (error) {
+        next(error)
+    }
+
+}
+
+export const deleteCustomer = async (req, res, next) => {
+    const { id } = req.params;
+    try {
+        const customer = await User.findByIdAndUpdate(
+            id,
+            { isDeleted: true },
+            { new: true, runValidators: true });
+
+        if (!customer) {
+            return next(new AppError("User not found", 404));
+        }
+
+        return res.status(200).json({
+            status: true,
+            message: 'Customer deleted successfully'
+        })
+    } catch (error) {
+        next(error);
     }
 }

@@ -637,3 +637,31 @@ export const createReviewSchema = joi.object({
   }).required()
 
 });
+
+
+// Validation for block customer route
+export const blockCustomerSchema = {
+    params: joi.object({
+        id: joi.string().custom(objectIdValidator).required().messages({
+            'any.required': 'Customer ID parameter is required',
+            'string.empty': 'Customer ID cannot be empty'
+        })
+    }),
+    body: joi.object({
+        status: joi.string().valid('active', 'blocked').required().messages({
+            'any.only': 'Status must be one of active or blocked',
+            'any.required': 'Status field is required in the request body',
+            'string.empty': 'Status cannot be empty'
+        })
+    })
+};
+
+// Validation for delete customer route
+export const deleteCustomerSchema = {
+    params: joi.object({
+        id: joi.string().custom(objectIdValidator).required().messages({
+            'any.required': 'Customer ID parameter is required',
+            'string.empty': 'Customer ID cannot be empty'
+        })
+    })
+};

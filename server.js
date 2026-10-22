@@ -46,7 +46,7 @@ app.use('/api/v1/auth/users', userAuthRoutes);
 // ==========================================
 // RESOURCE ROUTES (Version 1)
 // ==========================================
-app.use('/api/v1/admins', adminRoutes);     
+app.use('/api/v1/admins', adminRoutes);    
 app.use('/api/v1/products', productRoutes); 
 app.use('/api/v1/orders', orderRoutes);
 app.use('/api/v1/cart',cartRoutes);
