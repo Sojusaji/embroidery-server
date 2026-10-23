@@ -1,5 +1,5 @@
 import joi from 'joi';
-import mongoose, { isValidObjectId } from 'mongoose';
+import mongoose from 'mongoose';
 
 export const userLoginSchema = joi.object({
   body: joi.object({
@@ -471,7 +471,7 @@ export const orderSchema = joi.object({
         .messages({
           'any.required': 'Delivery address is required.',
         }),
-      billingAddress:joi
+      billingAddress: joi
         .object({
           fullName: joi.string().trim().empty('').required().messages({
             'any.required': 'Full name is required for delivery.',
@@ -618,7 +618,7 @@ export const getProductReviewSchema = joi.object({
 export const createReviewSchema = joi.object({
 
   params: joi.object({
-    id:productIdSchema
+    id: productIdSchema
   }).required(),
 
   body: joi.object({
@@ -640,28 +640,28 @@ export const createReviewSchema = joi.object({
 
 
 // Validation for block customer route
-export const blockCustomerSchema = {
-    params: joi.object({
-        id: joi.string().custom(objectIdValidator).required().messages({
-            'any.required': 'Customer ID parameter is required',
-            'string.empty': 'Customer ID cannot be empty'
-        })
-    }),
-    body: joi.object({
-        status: joi.string().valid('active', 'blocked').required().messages({
-            'any.only': 'Status must be one of active or blocked',
-            'any.required': 'Status field is required in the request body',
-            'string.empty': 'Status cannot be empty'
-        })
+export const blockCustomerSchema = joi.object({
+  params: joi.object({
+    id: joi.string().custom(objectIdValidator).required().messages({
+      'any.required': 'Customer ID parameter is required',
+      'string.empty': 'Customer ID cannot be empty'
     })
-};
+  }),
+  body: joi.object({
+    status: joi.string().valid('active', 'blocked').required().messages({
+      'any.only': 'Status must be one of active or blocked',
+      'any.required': 'Status field is required in the request body',
+      'string.empty': 'Status cannot be empty'
+    })
+  })
+});
 
 // Validation for delete customer route
-export const deleteCustomerSchema = {
-    params: joi.object({
-        id: joi.string().custom(objectIdValidator).required().messages({
-            'any.required': 'Customer ID parameter is required',
-            'string.empty': 'Customer ID cannot be empty'
-        })
+export const deleteCustomerSchema = joi.object({
+  params: joi.object({
+    id: joi.string().custom(objectIdValidator).required().messages({
+      'any.required': 'Customer ID parameter is required',
+      'string.empty': 'Customer ID cannot be empty'
     })
-};
+  })
+});
