@@ -29,7 +29,7 @@ router.route('/')
 
 
 router.get('/customer', restrictTo('admin', 'superAdmin'), getCustomersData);
-router.patch('/cutomer/:id/block', restrictTo('admin', 'superAdmin'),validate(blockCustomerSchema),blockCustomer);
+router.patch('/customer/:id/block', restrictTo('admin', 'superAdmin'),validate(blockCustomerSchema),blockCustomer);
 router.delete('/customer/:id/delete', restrictTo('admin', 'superAdmin'),validate(deleteCustomerSchema), deleteCustomer);
 
 router.delete('/:id', restrictTo('superAdmin'), deleteAdmin);
