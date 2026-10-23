@@ -6,6 +6,13 @@ export const getCustomersData = async (req, res, next) => {
 
         const aggregateResult = await User.aggregate([
             {
+                 $match:{
+                    isDeleted:{
+                        $ne:true
+                    }
+                 }
+            },
+            {
                 $lookup: {
                     from: "orders",
                     localField: '_id',
