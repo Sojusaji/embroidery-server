@@ -665,3 +665,25 @@ export const deleteCustomerSchema = joi.object({
     })
   })
 });
+
+
+
+export const getOrdersQuerySchema = joi.object({
+    status: joi.string()
+        .valid('pending', 'processing', 'shipped', 'delivered', 'cancelled')
+        .optional()
+        .messages({
+            'any.only': 'Invalid status value provided'
+        }),
+    
+    limit: joi.number()
+        .integer()
+        .min(1)
+        .max(100) 
+        .default(10)
+        .optional(),
+        
+    cursor: joi.string()
+        .optional()
+        .allow('') 
+});

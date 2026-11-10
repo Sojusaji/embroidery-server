@@ -9,9 +9,15 @@ import {
 import {
   getCustomersData,
   blockCustomer,
-  deleteCustomer
+  deleteCustomer,
+  getOrders,
+  getOrdersCount
 } from "../controllers/admin/customerDataController.js";
-import { deleteCustomerSchema,blockCustomerSchema } from "../utils/authValidator.js";
+import {
+  deleteCustomerSchema,
+  blockCustomerSchema,
+  getOrdersQuerySchema
+} from "../utils/authValidator.js";
 import { validate } from "../middlewares/validate.js";
 import { authMiddleware, restrictTo } from '../middlewares/authMiddleware.js';
 
@@ -29,8 +35,12 @@ router.route('/')
 
 
 router.get('/customer', restrictTo('admin', 'superAdmin'), getCustomersData);
-router.patch('/customer/:id/block', restrictTo('admin', 'superAdmin'),validate(blockCustomerSchema),blockCustomer);
-router.delete('/customer/:id/delete', restrictTo('admin', 'superAdmin'),validate(deleteCustomerSchema), deleteCustomer);
+router.patch('/customer/:id/block', restrictTo('admin', 'superAdmin'), validate(blockCustomerSchema), blockCustomer);
+router.delete('/customer/:id/delete', restrictTo('admin', 'superAdmin'), validate(deleteCustomerSchema), deleteCustomer);
+
+
+router.get('/orders', restrictTo('admin', 'superAdmin'), validate(getOrdersQuerySchema), getOrders)
+router.get('/orders-count', restrictTo('admin', 'superAdmin'), getOrdersCount);
 
 router.delete('/:id', restrictTo('superAdmin'), deleteAdmin);
 

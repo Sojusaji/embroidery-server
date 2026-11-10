@@ -110,6 +110,6 @@ const orderSchema = new Schema({
   }
 
 }, { timestamps: true });
-
+orderSchema.index({ status: 1, createdAt: -1, _id: -1 });
 const Order = model('Order', orderSchema);
 export default Order;
