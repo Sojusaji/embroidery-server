@@ -2,6 +2,7 @@ import { parse } from "dotenv";
 import Order from "../../models/Order.js";
 import User from "../../models/User.js";
 import mongoose from "mongoose";
+import AppError from "../../utils/appError.js";
 
 export const getCustomersData = async (req, res, next) => {
     try {
@@ -313,6 +314,34 @@ export const getOrdersCount = async (req, res, next) => {
         return res.status(200).json({
             status: true,
             ordersCount: counts
+        })
+    } catch (error) {
+        next(error);
+    }
+}
+
+export const updateOrderStatus = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const { newStatus } = req.body;
+
+        const updated = await Order.findByIdAndUpdate(
+            id,
+            {
+                $set: {
+                    orderStatus: newStatus
+                }
+            },
+            {
+                new: true,
+                runValidators: true
+            }
+        );
+        if (!updated) return next(new AppError('Order not found', 404));
+        return res.status(200).json({
+            status: true,
+            order: updated,
+            message: 'Status updated successfully'
         })
     } catch (error) {
         next(error);

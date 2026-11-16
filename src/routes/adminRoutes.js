@@ -11,12 +11,14 @@ import {
   blockCustomer,
   deleteCustomer,
   getOrders,
-  getOrdersCount
+  getOrdersCount,
+  updateOrderStatus
 } from "../controllers/admin/customerDataController.js";
 import {
   deleteCustomerSchema,
   blockCustomerSchema,
-  getOrdersQuerySchema
+  getOrdersQuerySchema,
+  updateOrderStatusSchema
 } from "../utils/authValidator.js";
 import { validate } from "../middlewares/validate.js";
 import { authMiddleware, restrictTo } from '../middlewares/authMiddleware.js';
@@ -41,7 +43,7 @@ router.delete('/customer/:id/delete', restrictTo('admin', 'superAdmin'), validat
 
 router.get('/orders', restrictTo('admin', 'superAdmin'), validate(getOrdersQuerySchema), getOrders)
 router.get('/orders-count', restrictTo('admin', 'superAdmin'), getOrdersCount);
-
+router.patch('/orders/:id',restrictTo('admin','superAdmin'),validate(updateOrderStatusSchema),updateOrderStatus);
 router.delete('/:id', restrictTo('superAdmin'), deleteAdmin);
 
 export default router;

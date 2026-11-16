@@ -231,6 +231,7 @@ export const categorySchema = joi.object({
 
 
 const objectIdValidator = (value, helpers) => {
+  console.log("order ID:",value);
   if (!mongoose.Types.ObjectId.isValid(value)) {
     return helpers.message('Invalid product ID format');
   }
@@ -669,21 +670,40 @@ export const deleteCustomerSchema = joi.object({
 
 
 export const getOrdersQuerySchema = joi.object({
-    status: joi.string()
-        .valid('pending', 'processing', 'shipped', 'delivered', 'cancelled')
-        .optional()
-        .messages({
-            'any.only': 'Invalid status value provided'
-        }),
-    
-    limit: joi.number()
-        .integer()
-        .min(1)
-        .max(100) 
-        .default(10)
-        .optional(),
-        
-    cursor: joi.string()
-        .optional()
-        .allow('') 
+  status: joi.string()
+    .valid('pending', 'processing', 'shipped', 'delivered', 'cancelled')
+    .optional()
+    .messages({
+      'any.only': 'Invalid status value provided'
+    }),
+
+  limit: joi.number()
+    .integer()
+    .min(1)
+    .max(100)
+    .default(10)
+    .optional(),
+
+  cursor: joi.string()
+    .optional()
+    .allow('')
 });
+
+export const updateOrderStatusSchema = joi.object({
+  params: joi.object({
+    id: joi.string().custom(objectIdValidator).required().messages({
+      'any.required': 'Order ID parameter is required',
+      'string.empty': 'Order ID cannot be empty'
+    })
+  }),
+  body: joi.object({
+    newStatus: joi.string()
+      .valid('pending', 'processing', 'shipped', 'delivered', 'cancelled')
+      .lowercase()
+      .required()
+      .messages({
+        'any.required':'Status required',
+        'any.only': 'Invalid status value provided'
+      }),
+  })
+})
